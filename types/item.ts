@@ -17,13 +17,21 @@ export enum ItemCondition {
 }
 
 export enum ItemSize {
+  XXS = "XXS",
   XS = "XS",
   S = "S",
   M = "M",
   L = "L",
   XL = "XL",
   XXL = "XXL",
+  XXXL = "XXXL",
   ONE_SIZE = "One Size",
+}
+
+export enum IntendedFit {
+  MEN = "men",
+  WOMEN = "women",
+  UNISEX = "unisex",
 }
 
 export enum ItemStatus {
@@ -39,6 +47,7 @@ export interface Item {
   category: ItemCategory;
   size: ItemSize;
   condition: ItemCondition;
+  intendedFit?: IntendedFit;
   imageUrls: string[];
   tokenCost: number;
   status: ItemStatus;
