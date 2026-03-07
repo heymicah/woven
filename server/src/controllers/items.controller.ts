@@ -148,3 +148,31 @@ export async function deleteItem(
     res.status(500).json({ message: "Server error" });
   }
 }
+
+export async function getMyItems(
+  req: AuthRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const items = await Item.find({ postedBy: req.userId })
+      .populate("claimedBy", "username avatarUrl")
+      .sort({ createdAt: -1 });
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function getClaimedItems(
+  req: AuthRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const items = await Item.find({ claimedBy: req.userId })
+      .populate("postedBy", "username avatarUrl")
+      .sort({ updatedAt: -1 });
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+}

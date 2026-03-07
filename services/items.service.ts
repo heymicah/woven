@@ -12,6 +12,16 @@ export const itemsService = {
     return data;
   },
 
+  getMine: async (): Promise<Item[]> => {
+    const { data } = await api.get<Item[]>("/items/mine");
+    return data;
+  },
+
+  getClaimed: async (): Promise<Item[]> => {
+    const { data } = await api.get<Item[]>("/items/claimed");
+    return data;
+  },
+
   create: async (item: Partial<Item>): Promise<Item> => {
     const { data } = await api.post<Item>("/items", item);
     return data;

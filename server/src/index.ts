@@ -7,6 +7,7 @@ import authRoutes from "./routes/auth.routes";
 import itemRoutes from "./routes/item.routes";
 import userRoutes from "./routes/user.routes";
 import transactionRoutes from "./routes/transaction.routes";
+import reviewRoutes from "./routes/review.routes";
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/items", itemRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/transactions", transactionRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 // Start server
 connectDB().then(() => {
