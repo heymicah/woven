@@ -8,6 +8,7 @@ import {
   FlatList,
   Alert,
   Dimensions,
+  Modal,
   ViewToken,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -19,6 +20,7 @@ import { Colors } from "../../constants/Colors";
 const Palette = {
   pink: "#FFD1D9",
   rose: "#E28D9B",
+  green: "#A8C9A8",
   cream: "#FAE5C4",
   brown: "#96755F",
   dark: "#411E12",
@@ -47,10 +49,10 @@ const MOCK_ITEMS: Record<
     gender: "Unisex",
     imageUrls: [
       "https://picsum.photos/seed/denim1/600/800",
-      "https://picsum.photos/seed/denim2/600/800",
-      "https://picsum.photos/seed/denim3/600/800",
-      "https://picsum.photos/seed/denim4/600/800",
-      "https://picsum.photos/seed/denim5/600/800",
+      "https://picsum.photos/seed/denim2/800/600",
+      "https://picsum.photos/seed/denim3/600/600",
+      "https://picsum.photos/seed/denim4/400/900",
+      "https://picsum.photos/seed/denim5/900/400",
       "https://picsum.photos/seed/denim6/600/800",
     ],
     postedBy: { _id: "user1", username: "vintagefinds" },
@@ -86,13 +88,53 @@ const MOCK_ITEMS: Record<
   },
 };
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+function FullscreenImageModal({
+  visible,
+  uri,
+  onClose,
+}: {
+  visible: boolean;
+  uri: string;
+  onClose: () => void;
+}) {
+  if (!visible) return null;
+
+  return (
+    <Modal
+      visible
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      <Pressable
+        onPress={onClose}
+        style={{
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.85)",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Image
+          source={{ uri }}
+          style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT * 0.8 }}
+          resizeMode="contain"
+        />
+      </Pressable>
+    </Modal>
+  );
+}
 
 export default function ItemDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [liked, setLiked] = useState(false);
+  const [carouselWidth, setCarouselWidth] = useState(0);
+  const [fullscreenVisible, setFullscreenVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
 
@@ -154,8 +196,11 @@ export default function ItemDetailScreen() {
         </View>
 
         {/* Main Photo Carousel */}
-        <View className="relative">
-          {images.length > 0 ? (
+        <View
+          className="relative mx-4 rounded-2xl overflow-hidden"
+          onLayout={(e) => setCarouselWidth(e.nativeEvent.layout.width)}
+        >
+          {images.length > 0 && carouselWidth > 0 ? (
             <FlatList
               ref={flatListRef}
               data={images}
@@ -165,12 +210,21 @@ export default function ItemDetailScreen() {
               onViewableItemsChanged={onViewableItemsChanged}
               viewabilityConfig={viewabilityConfig}
               keyExtractor={(_, i) => i.toString()}
+              getItemLayout={(_, index) => ({
+                length: carouselWidth,
+                offset: carouselWidth * index,
+                index,
+              })}
               renderItem={({ item: uri }) => (
-                <Image
-                  source={{ uri }}
-                  style={{ width: SCREEN_WIDTH, aspectRatio: 3 / 4 }}
-                  resizeMode="cover"
-                />
+                <Pressable onPress={() => setFullscreenVisible(true)}>
+                  <View style={{ width: carouselWidth, aspectRatio: 3 / 4, backgroundColor: Palette.cream }}>
+                    <Image
+                      source={{ uri }}
+                      style={{ width: "100%", height: "100%" }}
+                      resizeMode="contain"
+                    />
+                  </View>
+                </Pressable>
               )}
             />
           ) : (
@@ -192,7 +246,7 @@ export default function ItemDetailScreen() {
                     width: currentImageIndex === i ? 20 : 6,
                     height: 6,
                     borderRadius: 3,
-                    backgroundColor: currentImageIndex === i ? Palette.rose : "rgba(255,255,255,0.6)",
+                    backgroundColor: currentImageIndex === i ? Palette.green : "rgba(255,255,255,0.6)",
                   }}
                 />
               ))}
@@ -215,7 +269,7 @@ export default function ItemDetailScreen() {
             <Ionicons
               name={liked ? "heart" : "heart-outline"}
               size={20}
-              color={liked ? Palette.rose : Palette.dark}
+              color={liked ? Palette.green : Palette.dark}
             />
           </Pressable>
         </View>
@@ -235,7 +289,7 @@ export default function ItemDetailScreen() {
                   className="w-16 h-16 rounded-lg"
                   style={
                     currentImageIndex === index
-                      ? { borderWidth: 2, borderColor: Palette.rose }
+                      ? { borderWidth: 2, borderColor: Palette.green }
                       : { borderWidth: 1, borderColor: "#E5E7EB" }
                   }
                   resizeMode="cover"
@@ -298,7 +352,7 @@ export default function ItemDetailScreen() {
           <Pressable
             onPress={() => Alert.alert("Message", "Messaging coming soon!")}
             className="rounded-full py-4 items-center"
-            style={{ backgroundColor: Palette.rose }}
+            style={{ backgroundColor: "#A8C9A8" }}
           >
             <Text className="font-semibold text-base" style={{ color: Palette.green, fontFamily: "Quicksand_600SemiBold" }}>
               Message
@@ -306,6 +360,13 @@ export default function ItemDetailScreen() {
           </Pressable>
         </View>
       </SafeAreaView>
+
+      {/* Fullscreen Photo Overlay */}
+      <FullscreenImageModal
+        visible={fullscreenVisible}
+        uri={images[currentImageIndex]}
+        onClose={() => setFullscreenVisible(false)}
+      />
     </View>
   );
 }
