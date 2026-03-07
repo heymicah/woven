@@ -100,6 +100,15 @@ export default function PostScreen() {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
+  const handleSetMain = useCallback((index: number) => {
+    setPhotos((prev) => {
+      const next = [...prev];
+      const [picked] = next.splice(index, 1);
+      next.unshift(picked);
+      return next;
+    });
+  }, []);
+
   const handleCropPhoto = useCallback((index: number) => {
     setCropIndex(index);
   }, []);
@@ -171,6 +180,7 @@ export default function PostScreen() {
           onAddPhotos={handleAddPhotos}
           onDeletePhoto={handleDeletePhoto}
           onCropPhoto={handleCropPhoto}
+          onSetMain={handleSetMain}
         />
 
         {/* 2. Title */}

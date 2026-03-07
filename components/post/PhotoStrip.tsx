@@ -21,6 +21,7 @@ interface PhotoStripProps {
   onAddPhotos: () => void;
   onDeletePhoto: (index: number) => void;
   onCropPhoto: (index: number) => void;
+  onSetMain: (index: number) => void;
 }
 
 export default function PhotoStrip({
@@ -28,32 +29,50 @@ export default function PhotoStrip({
   onAddPhotos,
   onDeletePhoto,
   onCropPhoto,
+  onSetMain,
 }: PhotoStripProps) {
   // Show actions when tapping a thumbnail
   function handleThumbnailPress(index: number) {
+    const isMain = index === 0;
     if (Platform.OS === "ios") {
+      const options = isMain
+        ? ["Crop", "Delete", "Cancel"]
+        : ["Set as Main", "Crop", "Delete", "Cancel"];
+      const destructiveButtonIndex = isMain ? 1 : 2;
+      const cancelButtonIndex = isMain ? 2 : 3;
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: ["Crop", "Delete", "Cancel"],
-          destructiveButtonIndex: 1,
-          cancelButtonIndex: 2,
-          title: index === 0 ? "Main Photo" : `Photo ${index + 1}`,
+          options,
+          destructiveButtonIndex,
+          cancelButtonIndex,
+          title: isMain ? "Main Photo" : `Photo ${index + 1}`,
         },
         (buttonIndex) => {
-          if (buttonIndex === 0) onCropPhoto(index);
-          if (buttonIndex === 1) onDeletePhoto(index);
+          if (!isMain) {
+            if (buttonIndex === 0) onSetMain(index);
+            if (buttonIndex === 1) onCropPhoto(index);
+            if (buttonIndex === 2) onDeletePhoto(index);
+          } else {
+            if (buttonIndex === 0) onCropPhoto(index);
+            if (buttonIndex === 1) onDeletePhoto(index);
+          }
         }
       );
     } else {
       // Android fallback
+      const actions: any[] = [];
+      if (!isMain) {
+        actions.push({ text: "Set as Main", onPress: () => onSetMain(index) });
+      }
+      actions.push(
+        { text: "Crop", onPress: () => onCropPhoto(index) },
+        { text: "Delete", style: "destructive", onPress: () => onDeletePhoto(index) },
+        { text: "Cancel", style: "cancel" }
+      );
       Alert.alert(
-        index === 0 ? "Main Photo" : `Photo ${index + 1}`,
+        isMain ? "Main Photo" : `Photo ${index + 1}`,
         "Choose an action",
-        [
-          { text: "Crop", onPress: () => onCropPhoto(index) },
-          { text: "Delete", style: "destructive", onPress: () => onDeletePhoto(index) },
-          { text: "Cancel", style: "cancel" },
-        ]
+        actions
       );
     }
   }
