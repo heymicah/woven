@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { ItemCategory, ItemCondition, ItemSize, ItemStatus } from "../types";
+import { IntendedFit, ItemCategory, ItemCondition, ItemSize, ItemStatus } from "../types";
 
 export interface IItem extends Document {
   title: string;
@@ -7,6 +7,7 @@ export interface IItem extends Document {
   category: ItemCategory;
   size: ItemSize;
   condition: ItemCondition;
+  intendedFit?: IntendedFit;
   imageUrls: string[];
   tokenCost: number;
   status: ItemStatus;
@@ -32,6 +33,10 @@ const itemSchema = new Schema<IItem>(
       type: String,
       enum: Object.values(ItemCondition),
       required: true,
+    },
+    intendedFit: {
+      type: String,
+      enum: Object.values(IntendedFit),
     },
     imageUrls: { type: [String], default: [] },
     tokenCost: { type: Number, default: 1 },
