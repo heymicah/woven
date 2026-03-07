@@ -11,4 +11,8 @@ export const usersService = {
     const { data } = await api.put<User>("/users/me", updates);
     return data;
   },
+
+  changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
+    await api.put("/users/me/password", { currentPassword, newPassword });
+  },
 };

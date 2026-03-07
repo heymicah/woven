@@ -1,9 +1,12 @@
 import React from "react";
-import { Tabs } from "expo-router";
+import { Pressable } from "react-native";
+import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../constants/Colors";
 
 export default function TabsLayout() {
+  const router = useRouter();
+
   return (
     <Tabs
       screenOptions={{
@@ -11,11 +14,12 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: Colors.textSecondary,
         tabBarStyle: {
           borderTopColor: Colors.border,
+          backgroundColor: Colors.surface,
         },
         headerStyle: {
           backgroundColor: Colors.surface,
         },
-        headerTintColor: Colors.text,
+        headerTintColor: Colors.heading,
       }}
     >
       <Tabs.Screen
@@ -58,6 +62,7 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: "Profile",
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),

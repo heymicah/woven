@@ -1,12 +1,18 @@
 export const Colors = {
-  primary: "#4F46E5",
-  secondary: "#7C3AED",
-  accent: "#F59E0B",
-  background: "#F9FAFB",
-  surface: "#FFFFFF",
-  text: "#111827",
-  textSecondary: "#6B7280",
-  border: "#E5E7EB",
+  primary: "#E28D9B",       // Pink – buttons, active states
+  secondary: "#F9C2CB",     // Light pink – accents, highlights
+  accent: "#C4A686",        // Beige – surface accents
+  background: "#FAE5C4",    // Light beige – page backgrounds
+  surface: "#FFF8F0",       // Warm white – cards, panels
+  text: "#411E12",          // Darkest brown – body text
+  textSecondary: "#96755F", // Medium brown – secondary text
+  heading: "#543125",       // Dark brown – headings
+  border: "#C4A686",        // Beige – borders, dividers
   error: "#EF4444",
   success: "#10B981",
+  brown: {
+    dark: "#674438",
+    medium: "#96755F",
+    light: "#C4A686",
+  },
 };
