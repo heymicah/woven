@@ -32,17 +32,21 @@ router.post(
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const files = req.files as Express.Multer.File[];
+      console.log("[upload/images] files received:", files?.length ?? 0);
       if (!files || files.length === 0) {
         res.status(400).json({ message: "No images provided" });
         return;
       }
+      console.log("[upload/images] Uploading to Cloudinary...");
       const urls = await Promise.all(
         files.map((file) => uploadToCloudinary(file.buffer, "woven/items"))
       );
+      console.log("[upload/images] Upload success, urls:", urls);
       res.json({ urls });
-    } catch (error) {
-      console.error("Images upload error:", error);
-      res.status(500).json({ message: "Upload failed" });
+    } catch (error: any) {
+      console.error("[upload/images] ERROR:", error.message);
+      console.error("[upload/images] Stack:", error.stack);
+      res.status(500).json({ message: "Upload failed", error: error.message });
     }
   }
 );

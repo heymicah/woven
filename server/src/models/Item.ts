@@ -18,7 +18,7 @@ export interface IItem extends Document {
 const itemSchema = new Schema<IItem>(
   {
     title: { type: String, required: true, trim: true },
-    description: { type: String, required: true },
+    description: { type: String, default: "" },
     category: {
       type: String,
       enum: Object.values(ItemCategory),
@@ -26,7 +26,6 @@ const itemSchema = new Schema<IItem>(
     },
     size: {
       type: String,
-      enum: Object.values(ItemSize),
       required: true,
     },
     condition: {

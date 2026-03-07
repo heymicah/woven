@@ -18,6 +18,7 @@ import {
   IntendedFit,
 } from "../../types";
 import { itemsService } from "../../services/items.service";
+import { uploadService } from "../../services/upload.service";
 
 // Components
 import PhotoStrip from "../../components/post/PhotoStrip";
@@ -126,7 +127,13 @@ export default function PostScreen() {
 
     setIsSubmitting(true);
     try {
-      // Build form data for the API
+      // 1. Upload images to Cloudinary first
+      console.log("[PostScreen] Uploading", photos.length, "images...");
+      const imageUrls = await uploadService.uploadImages(photos);
+      console.log("[PostScreen] Upload success, URLs:", imageUrls);
+
+      // 2. Create the item with the Cloudinary URLs
+      console.log("[PostScreen] Creating item...");
       const item = await itemsService.create({
         title: title.trim(),
         description: description.trim(),
@@ -134,12 +141,16 @@ export default function PostScreen() {
         size: size as any,
         condition: condition as ItemCondition,
         intendedFit: intendedFit as IntendedFit,
-        imageUrls: photos, // URIs — server would handle upload in production
+        imageUrls,
       });
+      console.log("[PostScreen] Item created:", item._id);
 
-      // Navigate to the newly created item
-      router.replace(`/item/${item._id}`);
+      Alert.alert("Posted!", "Your item is now live.");
+      router.replace("/(tabs)");
     } catch (error: any) {
+      console.error("[PostScreen] ERROR:", error.message);
+      console.error("[PostScreen] Response data:", JSON.stringify(error?.response?.data));
+      console.error("[PostScreen] Response status:", error?.response?.status);
       Alert.alert(
         "Couldn't Post",
         error?.response?.data?.message || "Something went wrong. Please try again."
