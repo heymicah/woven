@@ -122,7 +122,7 @@ export default function SettingsScreen() {
             style={{ flex: 1 }}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-            <View style={{ flex: 1, backgroundColor: Colors.surface }}>
+            <View style={{ flex: 1, backgroundColor: Colors.background }}>
                 {/* Header */}
                 <View
                     style={{
@@ -131,7 +131,7 @@ export default function SettingsScreen() {
                         paddingTop: 72,
                         paddingBottom: 16,
                         paddingHorizontal: 16,
-                        backgroundColor: Colors.surface,
+                        backgroundColor: Colors.background,
                     }}
                 >
                     <Pressable
@@ -145,7 +145,7 @@ export default function SettingsScreen() {
                             justifyContent: "center",
                         }}
                     >
-                        <Ionicons name="arrow-back" size={20} color={Colors.primary} />
+                        <Ionicons name="arrow-back" size={20} color={Colors.heading} />
                     </Pressable>
                     <Text
                         style={{
@@ -228,7 +228,7 @@ export default function SettingsScreen() {
                                         borderColor: "#FFFFFF",
                                     }}
                                 >
-                                    <Ionicons name="camera" size={16} color="#FFFFFF" />
+                                    <Ionicons name="camera" size={16} color={Colors.heading} />
                                 </View>
                             </Pressable>
                             <Text
@@ -504,7 +504,7 @@ export default function SettingsScreen() {
                             <Text style={{ fontSize: 16, color: Colors.error, fontWeight: "600", marginLeft: 12, flex: 1 }}>
                                 Sign Out
                             </Text>
-                            <Ionicons name="chevron-forward" size={18} color={Colors.border} />
+                            <Ionicons name="chevron-forward" size={18} color={Colors.textSecondary} />
                         </Pressable>
                     </View>
 

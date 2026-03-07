@@ -13,12 +13,12 @@ export default function SearchScreen() {
   // TODO: Implement search with itemsService.getAll({ search: query, category: selectedCategory })
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <View className="px-4 pt-4">
-        <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4 py-3">
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "white", borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12 }}>
           <Ionicons name="search" size={20} color={Colors.textSecondary} />
           <TextInput
-            className="flex-1 ml-2 text-base"
+            style={{ flex: 1, marginLeft: 8, fontSize: 16 }}
             placeholder="Search items..."
             value={query}
             onChangeText={setQuery}
@@ -29,7 +29,7 @@ export default function SearchScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        className="px-4 py-3"
+        style={{ paddingHorizontal: 16, paddingVertical: 12 }}
         contentContainerStyle={{ gap: 8 }}
       >
         {CATEGORIES.map((cat) => (
@@ -38,16 +38,22 @@ export default function SearchScreen() {
             onPress={() =>
               setSelectedCategory(selectedCategory === cat ? null : cat)
             }
-            className={`px-4 py-2 rounded-full ${
-              selectedCategory === cat
-                ? "bg-indigo-600"
-                : "bg-white border border-gray-200"
-            }`}
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderRadius: 20,
+              backgroundColor: selectedCategory === cat ? Colors.primary : "white",
+              borderWidth: 1,
+              borderColor: selectedCategory === cat ? Colors.primary : "#E5E7EB",
+            }}
           >
             <Text
-              className={`text-sm capitalize ${
-                selectedCategory === cat ? "text-white font-medium" : "text-gray-600"
-              }`}
+              style={{
+                fontSize: 14,
+                textTransform: "capitalize",
+                color: selectedCategory === cat ? "white" : Colors.text,
+                fontWeight: selectedCategory === cat ? "600" : "400",
+              }}
             >
               {cat}
             </Text>
@@ -56,9 +62,9 @@ export default function SearchScreen() {
       </ScrollView>
 
       {/* TODO: Display search results with FlatList of ItemCards */}
-      <View className="flex-1 items-center justify-center">
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
         <Ionicons name="search-outline" size={48} color={Colors.border} />
-        <Text className="text-gray-400 mt-4 text-base">
+        <Text style={{ color: Colors.textSecondary, marginTop: 16, fontSize: 16 }}>
           Search for clothing items
         </Text>
       </View>

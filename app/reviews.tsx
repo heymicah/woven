@@ -91,7 +91,7 @@ export default function ReviewsScreen() {
     };
 
     return (
-        <View style={{ flex: 1, backgroundColor: Colors.surface }}>
+        <View style={{ flex: 1, backgroundColor: Colors.background }}>
             {/* Header */}
             <View
                 style={{
@@ -100,7 +100,7 @@ export default function ReviewsScreen() {
                     paddingTop: 56,
                     paddingBottom: 16,
                     paddingHorizontal: 16,
-                    backgroundColor: Colors.surface,
+                    backgroundColor: Colors.background,
                 }}
             >
                 <Pressable
@@ -161,7 +161,7 @@ export default function ReviewsScreen() {
                     paddingHorizontal: 16,
                     paddingVertical: 12,
                     gap: 8,
-                    backgroundColor: Colors.surface,
+                    backgroundColor: Colors.background,
                 }}
             >
                 {SORT_OPTIONS.map((option) => {
