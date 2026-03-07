@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Image,
@@ -9,19 +9,149 @@ import {
   StyleSheet,
   ActionSheetIOS,
   Platform,
+  PanResponder,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../constants/Colors";
 
 const MAX_PHOTOS = 10;
 const THUMB_SIZE = 80;
+const GAP = 10;
+const ITEM_W = THUMB_SIZE + GAP;
 
 interface PhotoStripProps {
-  photos: string[]; // array of local URIs
+  photos: string[];
   onAddPhotos: () => void;
   onDeletePhoto: (index: number) => void;
   onCropPhoto: (index: number) => void;
   onSetMain: (index: number) => void;
+  onReorder: (from: number, to: number) => void;
+}
+
+interface DraggableThumbProps {
+  uri: string;
+  index: number;
+  total: number;
+  isMain: boolean;
+  draggingIndex: number | null;
+  hoverIndex: number | null;
+  onReorder: (from: number, to: number) => void;
+  onPress: () => void;
+  onDragStart: (index: number) => void;
+  onDragEnd: () => void;
+  onHoverChange: (index: number) => void;
+}
+
+function DraggableThumb({
+  uri,
+  index,
+  total,
+  isMain,
+  draggingIndex,
+  hoverIndex,
+  onReorder,
+  onPress,
+  onDragStart,
+  onDragEnd,
+  onHoverChange,
+}: DraggableThumbProps) {
+  const pan = useRef(new Animated.ValueXY()).current;
+  const scale = useRef(new Animated.Value(1)).current;
+  const isDragging = draggingIndex === index;
+  const isAnyDragging = draggingIndex !== null;
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activated = useRef(false);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => activated.current,
+
+      onPanResponderGrant: () => {
+        activated.current = false;
+        longPressTimer.current = setTimeout(() => {
+          activated.current = true;
+          onDragStart(index);
+          Animated.spring(scale, {
+            toValue: 1.08,
+            useNativeDriver: true,
+          }).start();
+        }, 300);
+      },
+
+      onPanResponderMove: (_, gs) => {
+        if (!activated.current) return;
+        pan.setValue({ x: gs.dx, y: 0 });
+        const newHover = Math.min(
+          Math.max(0, Math.round(index + gs.dx / ITEM_W)),
+          total - 1
+        );
+        onHoverChange(newHover);
+      },
+
+      onPanResponderRelease: (_, gs) => {
+        if (longPressTimer.current) clearTimeout(longPressTimer.current);
+        if (!activated.current) {
+          onPress();
+          return;
+        }
+        activated.current = false;
+        const to = Math.min(
+          Math.max(0, Math.round(index + gs.dx / ITEM_W)),
+          total - 1
+        );
+        // Reset transforms and state before reordering so no stale shifts
+        pan.setValue({ x: 0, y: 0 });
+        scale.setValue(1);
+        onDragEnd();
+        if (to !== index) onReorder(index, to);
+      },
+
+      onPanResponderTerminate: () => {
+        if (longPressTimer.current) clearTimeout(longPressTimer.current);
+        activated.current = false;
+        pan.setValue({ x: 0, y: 0 });
+        scale.setValue(1);
+        onDragEnd();
+      },
+    })
+  ).current;
+
+  // Compute shift for non-dragged items
+  let shift = 0;
+  if (draggingIndex !== null && hoverIndex !== null && draggingIndex !== index) {
+    if (draggingIndex < hoverIndex && index > draggingIndex && index <= hoverIndex) {
+      shift = -ITEM_W;
+    } else if (draggingIndex > hoverIndex && index >= hoverIndex && index < draggingIndex) {
+      shift = ITEM_W;
+    }
+  }
+
+  return (
+    <Animated.View
+      {...panResponder.panHandlers}
+      style={[
+        styles.thumbnail,
+        isMain && styles.thumbnailMain,
+        isDragging && styles.thumbnailDragging,
+        {
+          transform: isDragging
+            ? [{ translateX: pan.x }, { scale }]
+            : [{ translateX: shift }, { scale: isAnyDragging ? 0.95 : 1 }],
+          zIndex: isDragging ? 10 : 1,
+          opacity: !isDragging && isAnyDragging ? 0.7 : 1,
+        },
+      ]}
+    >
+      <Image source={{ uri }} style={styles.thumbnailImage} />
+      {isMain && (
+        <View style={styles.mainBadge}>
+          <Text style={styles.mainBadgeText}>Main</Text>
+        </View>
+      )}
+    </Animated.View>
+  );
 }
 
 export default function PhotoStrip({
@@ -30,8 +160,11 @@ export default function PhotoStrip({
   onDeletePhoto,
   onCropPhoto,
   onSetMain,
+  onReorder,
 }: PhotoStripProps) {
-  // Show actions when tapping a thumbnail
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+
   function handleThumbnailPress(index: number) {
     const isMain = index === 0;
     if (Platform.OS === "ios") {
@@ -59,7 +192,6 @@ export default function PhotoStrip({
         }
       );
     } else {
-      // Android fallback
       const actions: any[] = [];
       if (!isMain) {
         actions.push({ text: "Set as Main", onPress: () => onSetMain(index) });
@@ -87,34 +219,27 @@ export default function PhotoStrip({
       </Text>
       <ScrollView
         horizontal
+        scrollEnabled={draggingIndex === null}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.stripContent}
       >
-        {/* Existing photos */}
         {photos.map((uri, index) => (
-          <Pressable
+          <DraggableThumb
             key={`photo-${index}`}
+            uri={uri}
+            index={index}
+            total={photos.length}
+            isMain={index === 0}
+            draggingIndex={draggingIndex}
+            hoverIndex={hoverIndex}
+            onReorder={onReorder}
             onPress={() => handleThumbnailPress(index)}
-            style={[
-              styles.thumbnail,
-              index === 0 && styles.thumbnailMain,
-            ]}
-            accessibilityLabel={
-              index === 0
-                ? "Main photo, tap to edit"
-                : `Photo ${index + 1}, tap to edit`
-            }
-          >
-            <Image source={{ uri }} style={styles.thumbnailImage} />
-            {index === 0 && (
-              <View style={styles.mainBadge}>
-                <Text style={styles.mainBadgeText}>Main</Text>
-              </View>
-            )}
-          </Pressable>
+            onDragStart={setDraggingIndex}
+            onDragEnd={() => { setDraggingIndex(null); setHoverIndex(null); }}
+            onHoverChange={setHoverIndex}
+          />
         ))}
 
-        {/* Add photo tile */}
         {photos.length < MAX_PHOTOS && (
           <Pressable
             onPress={onAddPhotos}
@@ -164,6 +289,13 @@ const styles = StyleSheet.create({
   thumbnailMain: {
     borderWidth: 2.5,
     borderColor: Colors.secondary,
+  },
+  thumbnailDragging: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
   thumbnailImage: {
     width: "100%",

@@ -109,6 +109,15 @@ export default function PostScreen() {
     });
   }, []);
 
+  const handleReorder = useCallback((from: number, to: number) => {
+    setPhotos((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  }, []);
+
   const handleCropPhoto = useCallback((index: number) => {
     setCropIndex(index);
   }, []);
@@ -181,6 +190,7 @@ export default function PostScreen() {
           onDeletePhoto={handleDeletePhoto}
           onCropPhoto={handleCropPhoto}
           onSetMain={handleSetMain}
+          onReorder={handleReorder}
         />
 
         {/* 2. Title */}
