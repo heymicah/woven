@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { Item } from "../models/Item";
 import { User } from "../models/User";
 import { Transaction } from "../models/Transaction";
+import mongoose from "mongoose";
 import { AuthRequest, ItemStatus, TransactionType } from "../types";
 
 const POST_REWARD = 1;

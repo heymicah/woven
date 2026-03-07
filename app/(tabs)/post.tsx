@@ -29,8 +29,11 @@ export default function PostScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-gray-50 px-4 pt-4">
-      <Text className="text-2xl font-bold text-gray-900 mb-6">Post an Item</Text>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: Colors.background }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16 }}
+    >
+      <Text style={{ fontSize: 24, fontWeight: "bold", color: Colors.heading, marginBottom: 24 }}>Post an Item</Text>
 
       {/* TODO: Image picker */}
       <Pressable className="h-48 bg-white border-2 border-dashed border-gray-300 rounded-2xl items-center justify-center mb-6">
@@ -68,14 +71,12 @@ export default function PostScreen() {
           <Pressable
             key={cat}
             onPress={() => setCategory(cat)}
-            className={`px-4 py-2 rounded-full ${
-              category === cat ? "bg-indigo-600" : "bg-white border border-gray-200"
-            }`}
+            className={`px-4 py-2 rounded-full ${category === cat ? "bg-indigo-600" : "bg-white border border-gray-200"
+              }`}
           >
             <Text
-              className={`text-sm capitalize ${
-                category === cat ? "text-white" : "text-gray-600"
-              }`}
+              className={`text-sm capitalize ${category === cat ? "text-white" : "text-gray-600"
+                }`}
             >
               {cat}
             </Text>
@@ -94,14 +95,12 @@ export default function PostScreen() {
           <Pressable
             key={s}
             onPress={() => setSize(s)}
-            className={`px-4 py-2 rounded-full ${
-              size === s ? "bg-indigo-600" : "bg-white border border-gray-200"
-            }`}
+            className={`px-4 py-2 rounded-full ${size === s ? "bg-indigo-600" : "bg-white border border-gray-200"
+              }`}
           >
             <Text
-              className={`text-sm ${
-                size === s ? "text-white" : "text-gray-600"
-              }`}
+              className={`text-sm ${size === s ? "text-white" : "text-gray-600"
+                }`}
             >
               {s}
             </Text>
@@ -120,14 +119,12 @@ export default function PostScreen() {
           <Pressable
             key={c}
             onPress={() => setCondition(c)}
-            className={`px-4 py-2 rounded-full ${
-              condition === c ? "bg-indigo-600" : "bg-white border border-gray-200"
-            }`}
+            className={`px-4 py-2 rounded-full ${condition === c ? "bg-indigo-600" : "bg-white border border-gray-200"
+              }`}
           >
             <Text
-              className={`text-sm capitalize ${
-                condition === c ? "text-white" : "text-gray-600"
-              }`}
+              className={`text-sm capitalize ${condition === c ? "text-white" : "text-gray-600"
+                }`}
             >
               {c.replace("_", " ")}
             </Text>
