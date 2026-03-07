@@ -10,15 +10,19 @@ interface AuthContextType {
   login: (payload: LoginPayload) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+  updateUser: (updates: Partial<User>) => void;
 }
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
   isAuthenticated: false,
-  login: async () => {},
-  register: async () => {},
-  logout: async () => {},
+  login: async () => { },
+  register: async () => { },
+  logout: async () => { },
+  refreshUser: async () => { },
+  updateUser: () => { },
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -60,6 +64,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
+  async function refreshUser() {
+    try {
+      const userData = await authService.getMe();
+      setUser(userData);
+    } catch {
+      // silently fail
+    }
+  }
+
+  function updateUser(updates: Partial<User>) {
+    setUser((prev) => (prev ? { ...prev, ...updates } : prev));
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -69,6 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
+        refreshUser,
+        updateUser,
       }}
     >
       {children}

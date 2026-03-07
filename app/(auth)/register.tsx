@@ -5,10 +5,9 @@ import {
   TextInput,
   Pressable,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
+  ScrollView,
+  StyleSheet,
 } from "react-native";
-import { Link } from "expo-router";
 import { useAuth } from "../../hooks/useAuth";
 
 export default function RegisterScreen() {
@@ -34,9 +33,10 @@ export default function RegisterScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-white"
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+      bounces={false}
     >
       <View className="flex-1 justify-center px-8">
         <Text className="text-4xl font-bold text-center text-indigo-600 mb-2">
@@ -47,23 +47,26 @@ export default function RegisterScreen() {
         </Text>
 
         <TextInput
-          className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-4 text-base"
+          style={styles.input}
           placeholder="Username"
+          placeholderTextColor="#9CA3AF"
           value={username}
           onChangeText={setUsername}
           autoCapitalize="none"
         />
         <TextInput
-          className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-4 text-base"
+          style={styles.input}
           placeholder="Email"
+          placeholderTextColor="#9CA3AF"
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
         />
         <TextInput
-          className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-6 text-base"
+          style={[styles.input, { marginBottom: 24 }]}
           placeholder="Password"
+          placeholderTextColor="#9CA3AF"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -73,23 +76,31 @@ export default function RegisterScreen() {
           onPress={handleRegister}
           disabled={loading}
           className="bg-indigo-600 rounded-xl py-4 items-center"
+          style={({ pressed }) => pressed && { opacity: 0.8 }}
         >
           <Text className="text-white font-semibold text-base">
             {loading ? "Creating account..." : "Create Account"}
           </Text>
         </Pressable>
-
-        <Text className="text-center text-gray-400 text-sm mt-4">
-          You'll start with 2 tokens to claim items!
-        </Text>
-
-        <View className="flex-row justify-center mt-4">
-          <Text className="text-gray-500">Already have an account? </Text>
-          <Link href="/(auth)/login" className="text-indigo-600 font-semibold">
-            Sign In
-          </Link>
-        </View>
       </View>
-    </KeyboardAvoidingView>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    backgroundColor: "#FFFFFF",
+  },
+  input: {
+    backgroundColor: "#F9FAFB",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 16,
+    fontSize: 16,
+    color: "#111827",
+  },
+});
