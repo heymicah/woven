@@ -354,7 +354,7 @@ export default function ItemDetailScreen() {
             className="rounded-full py-4 items-center"
             style={{ backgroundColor: "#A8C9A8" }}
           >
-            <Text className="font-semibold text-base" style={{ color: Palette.dark, fontFamily: "Quicksand_600SemiBold" }}>
+            <Text className="font-semibold text-base" style={{ color: "#A8C9A8", fontFamily: "Quicksand_600SemiBold" }}>
               Message
             </Text>
           </Pressable>
