@@ -17,6 +17,7 @@ import * as ImagePicker from "expo-image-picker";
 import { Colors } from "../constants/Colors";
 import { useAuth } from "../hooks/useAuth";
 import { usersService } from "../services/users.service";
+import { uploadService } from "../services/upload.service";
 
 export default function SettingsScreen() {
     const router = useRouter();
@@ -27,6 +28,7 @@ export default function SettingsScreen() {
     const [bio, setBio] = useState(user?.bio || "");
     const [avatarUri, setAvatarUri] = useState(user?.avatarUrl || "");
     const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const scrollRef = useRef<ScrollView>(null);
 
     // Password change
@@ -57,7 +59,18 @@ export default function SettingsScreen() {
         });
 
         if (!result.canceled && result.assets[0]) {
-            setAvatarUri(result.assets[0].uri);
+            const localUri = result.assets[0].uri;
+            setAvatarUri(localUri);
+            setUploading(true);
+            try {
+                const cloudinaryUrl = await uploadService.uploadImage(localUri);
+                setAvatarUri(cloudinaryUrl);
+            } catch {
+                Alert.alert("Upload failed", "Could not upload image. Please try again.");
+                setAvatarUri(user?.avatarUrl || "");
+            } finally {
+                setUploading(false);
+            }
         }
     };
 
@@ -238,7 +251,7 @@ export default function SettingsScreen() {
                                     marginTop: 8,
                                 }}
                             >
-                                Tap to change photo
+                                {uploading ? "Uploading..." : "Tap to change photo"}
                             </Text>
                         </View>
 
@@ -303,13 +316,13 @@ export default function SettingsScreen() {
                         {/* Save Button */}
                         <Pressable
                             onPress={handleSave}
-                            disabled={saving}
+                            disabled={saving || uploading}
                             style={{
                                 backgroundColor: Colors.primary,
                                 borderRadius: 12,
                                 paddingVertical: 14,
                                 alignItems: "center",
-                                opacity: saving ? 0.6 : 1,
+                                opacity: saving || uploading ? 0.6 : 1,
                             }}
                         >
                             <Text style={{ color: Colors.heading, fontWeight: "700", fontSize: 15 }}>
