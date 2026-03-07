@@ -308,9 +308,9 @@ const styles = StyleSheet.create({
     fontFamily: "Quicksand_400Regular",
   },
   textInput: {
-    backgroundColor: Colors.surface,
+    backgroundColor: "#FFF1DA",
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: "#E5E7EB",
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 12,

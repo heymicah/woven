@@ -145,9 +145,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: Colors.surface,
+    backgroundColor: "#FFF1DA",
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: "#E5E7EB",
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 13,
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.35)",
   },
   sheet: {
-    backgroundColor: Colors.surface,
+    backgroundColor: "#FFF1DA",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: "65%",
@@ -228,9 +228,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondary,
   },
   chipInactive: {
-    backgroundColor: Colors.background,
+    backgroundColor: "#FAE5C4",
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: "#E5E7EB",
   },
   chipText: {
     fontSize: 13,

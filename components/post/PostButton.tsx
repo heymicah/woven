@@ -62,8 +62,8 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.border,
   },
   button: {
-    backgroundColor: Colors.secondary,
-    borderRadius: 16,
+    backgroundColor: "#411E12",
+    borderRadius: 100,
     paddingVertical: 15,
     alignItems: "center",
     justifyContent: "center",
@@ -75,15 +75,14 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   buttonDisabled: {
-    backgroundColor: Colors.border,
-    opacity: 0.6,
+    opacity: 0.4,
     shadowOpacity: 0,
     elevation: 0,
   },
   buttonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "#FAE5C4",
     fontFamily: "Quicksand_700Bold",
   },
   buttonTextDisabled: {
