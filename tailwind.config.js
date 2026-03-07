@@ -9,20 +9,15 @@ module.exports = {
     extend: {
       colors: {
         pink: {
-          light: "#F9C2CB",
-          DEFAULT: "#E28D9B",
-          dark: "#D4707F",
+          light: "#f9c2cb",
+          DEFAULT: "#e28d9b",
         },
         beige: {
-          light: "#FAE5C4",
-          DEFAULT: "#C4A686",
-          surface: "#FFF8F0",
+          light: "#fae5c4",
         },
         brown: {
-          lightest: "#96755F",
-          light: "#674438",
-          DEFAULT: "#543125",
-          dark: "#411E12",
+          light: "#96755f",
+          dark: "#411e12",
         },
       },
     },
