@@ -346,20 +346,38 @@ export default function ItemDetailScreen() {
         <View className="h-24" />
       </ScrollView>
 
-      {/* Docked Message Button */}
-      <SafeAreaView edges={["bottom"]} style={{ backgroundColor: Palette.cream }}>
-        <View className="px-4 pb-4">
-          <Pressable
-            onPress={() => Alert.alert("Message", "Messaging coming soon!")}
-            className="rounded-full py-4 items-center"
-            style={{ backgroundColor: "#A8C9A8" }}
+      {/* Floating Message Button */}
+      <View
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          paddingBottom: insets.bottom + 16,
+          paddingHorizontal: 16,
+        }}
+        pointerEvents="box-none"
+      >
+        <Pressable
+          onPress={() => Alert.alert("Message", "Messaging coming soon!")}
+          className="rounded-full py-4 items-center"
+          style={{
+            backgroundColor: Palette.green,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 3,
+          }}
+        >
+          <Text
+            className="font-semibold text-base"
+            style={{ color: Palette.dark, fontFamily: "Quicksand_600SemiBold" }}
           >
-            <Text className="font-semibold text-base" style={{ color: Palette.green, fontFamily: "Quicksand_600SemiBold" }}>
-              Message
-            </Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
+            Message
+          </Text>
+        </Pressable>
+      </View>
 
       {/* Fullscreen Photo Overlay */}
       <FullscreenImageModal
