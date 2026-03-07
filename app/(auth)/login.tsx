@@ -38,7 +38,7 @@ export default function LoginScreen() {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
     <View style={styles.screen}>
       <View style={styles.form}>
-        <Text className="text-4xl font-bold text-center text-indigo-600 mb-2">
+        <Text className="text-4xl font-bold text-center text-[#411E12] mb-2">
           Woven
         </Text>
         <Text className="text-base text-center text-gray-500 mb-10">
@@ -48,7 +48,7 @@ export default function LoginScreen() {
         <TextInput
           style={styles.input}
           placeholder="Email"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor="#96755F"
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
@@ -61,7 +61,7 @@ export default function LoginScreen() {
           ref={passwordRef}
           style={[styles.input, { marginBottom: 24 }]}
           placeholder="Password"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor="#96755F"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -72,10 +72,10 @@ export default function LoginScreen() {
         <Pressable
           onPress={handleLogin}
           disabled={loading}
-          className="bg-indigo-600 rounded-xl py-4 items-center"
+          className="bg-[#A8C9A8] rounded-full py-4 items-center"
           style={({ pressed }) => pressed && { opacity: 0.8 }}
         >
-          <Text className="text-white font-semibold text-base">
+          <Text className="text-[#411E12] font-semibold text-base">
             {loading ? "Signing in..." : "Sign In"}
           </Text>
         </Pressable>
@@ -86,7 +86,7 @@ export default function LoginScreen() {
         >
           <Text className="text-gray-500">
             Don't have an account?{" "}
-            <Text className="text-indigo-600 font-semibold">Sign Up</Text>
+            <Text className="text-[#411E12] font-semibold">Sign Up</Text>
           </Text>
         </Pressable>
       </View>
@@ -98,7 +98,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FAE5C4",
     justifyContent: "center",
     paddingBottom: "40%",
   },
@@ -106,14 +106,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   input: {
-    backgroundColor: "#F9FAFB",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    backgroundColor: "#FFF1DA",
+    borderWidth: 0,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     marginBottom: 16,
     fontSize: 16,
-    color: "#111827",
+    color: "#411E12",
   },
 });
