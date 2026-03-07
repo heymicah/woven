@@ -1,12 +1,13 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
   TextInput,
   Pressable,
   Alert,
-  ScrollView,
   StyleSheet,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "../../hooks/useAuth";
@@ -16,6 +17,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const passwordRef = useRef<TextInput>(null);
 
   async function handleLogin() {
     if (!email || !password) {
@@ -33,12 +35,9 @@ export default function LoginScreen() {
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
-      bounces={false}
-    >
-      <View className="flex-1 justify-center px-8">
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+    <View style={styles.screen}>
+      <View style={styles.form}>
         <Text className="text-4xl font-bold text-center text-indigo-600 mb-2">
           Woven
         </Text>
@@ -54,14 +53,20 @@ export default function LoginScreen() {
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
+          returnKeyType="next"
+          onSubmitEditing={() => passwordRef.current?.focus()}
+          blurOnSubmit={false}
         />
         <TextInput
+          ref={passwordRef}
           style={[styles.input, { marginBottom: 24 }]}
           placeholder="Password"
           placeholderTextColor="#9CA3AF"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
+          returnKeyType="go"
+          onSubmitEditing={handleLogin}
         />
 
         <Pressable
@@ -85,14 +90,20 @@ export default function LoginScreen() {
           </Text>
         </Pressable>
       </View>
-    </ScrollView>
+    </View>
+    </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
+  screen: {
+    flex: 1,
     backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    paddingBottom: "40%",
+  },
+  form: {
+    paddingHorizontal: 32,
   },
   input: {
     backgroundColor: "#F9FAFB",
