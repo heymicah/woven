@@ -73,7 +73,7 @@ export default function LoginScreen() {
           onPress={handleLogin}
           disabled={loading}
           className="bg-indigo-600 rounded-xl py-4 items-center"
-          style={({ pressed }) => pressed && { opacity: 0.8 }}
+          style={({ pressed }) => (pressed ? { opacity: 0.8 } : undefined)}
         >
           <Text className="text-white font-semibold text-base">
             {loading ? "Signing in..." : "Sign In"}

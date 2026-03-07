@@ -86,7 +86,7 @@ export default function RegisterScreen() {
           onPress={handleRegister}
           disabled={loading}
           className="bg-indigo-600 rounded-xl py-4 items-center"
-          style={({ pressed }) => pressed && { opacity: 0.8 }}
+          style={({ pressed }) => (pressed ? { opacity: 0.8 } : undefined)}
         >
           <Text className="text-white font-semibold text-base">
             {loading ? "Creating account..." : "Create Account"}

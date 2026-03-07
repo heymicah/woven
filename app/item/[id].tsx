@@ -14,6 +14,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../constants/Colors";
+import { useAuth } from "../../hooks/useAuth";
+import { messagesService } from "../../services/messages.service";
 
 // Palette: #FFD1D9, #E28D9B, #FAE5C4, #96755F, #411E12
 const Palette = {
@@ -96,7 +98,10 @@ export default function ItemDetailScreen() {
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
 
+  const { user } = useAuth();
+
   const item = MOCK_ITEMS[id ?? "1"] ?? MOCK_ITEMS["1"];
+  const isOwnItem = user?._id === item.postedBy._id;
   const images = item.imageUrls;
   const tags = [item.gender, `Size ${item.size}`, item.condition];
 
@@ -293,19 +298,31 @@ export default function ItemDetailScreen() {
       </ScrollView>
 
       {/* Docked Message Button */}
-      <SafeAreaView edges={["bottom"]} style={{ backgroundColor: Palette.cream }}>
-        <View className="px-4 pb-4">
-          <Pressable
-            onPress={() => Alert.alert("Message", "Messaging coming soon!")}
-            className="rounded-full py-4 items-center"
-            style={{ backgroundColor: Palette.rose }}
-          >
-            <Text className="font-semibold text-base" style={{ color: Palette.dark, fontFamily: "Quicksand_600SemiBold" }}>
-              Message
-            </Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
+      {!isOwnItem && (
+        <SafeAreaView edges={["bottom"]} style={{ backgroundColor: Palette.cream }}>
+          <View className="px-4 pb-4">
+            <Pressable
+              onPress={async () => {
+                try {
+                  const convo = await messagesService.getOrCreateConversation(
+                    item.postedBy._id,
+                    item._id
+                  );
+                  router.push(`/chat/${convo._id}`);
+                } catch (error) {
+                  Alert.alert("Error", "Could not start conversation");
+                }
+              }}
+              className="rounded-full py-4 items-center"
+              style={{ backgroundColor: Palette.rose }}
+            >
+              <Text className="font-semibold text-base" style={{ color: Palette.dark, fontFamily: "Quicksand_600SemiBold" }}>
+                Message
+              </Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      )}
     </View>
   );
 }
