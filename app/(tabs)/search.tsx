@@ -16,50 +16,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import * as SecureStore from "expo-secure-store";
 import { Colors } from "../../constants/Colors";
 
-const RECENT_SEARCHES_KEY = "recent_searches";
-const MAX_RECENT = 10;
-
-const CATEGORIES = [
-  "Recently Added",
-  "T-Shirts",
-  "Blouses & Button-Ups",
-  "Sweaters & Hoodies",
-  "Jackets & Coats",
-  "Jeans",
-  "Pants & Trousers",
-  "Shorts",
-  "Skirts",
-  "Dresses",
-  "Activewear",
-  "Shoes",
-  "Bags",
-  "Hats & Accessories",
-];
-
-async function getRecentSearches(): Promise<string[]> {
-  try {
-    const raw = await SecureStore.getItemAsync(RECENT_SEARCHES_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-async function addRecentSearch(term: string): Promise<string[]> {
-  const recent = await getRecentSearches();
-  const filtered = recent.filter((s) => s.toLowerCase() !== term.toLowerCase());
-  const updated = [term, ...filtered].slice(0, MAX_RECENT);
-  await SecureStore.setItemAsync(RECENT_SEARCHES_KEY, JSON.stringify(updated));
-  return updated;
-}
-
-async function removeRecentSearch(term: string): Promise<string[]> {
-  const recent = await getRecentSearches();
-  const updated = recent.filter((s) => s !== term);
-  await SecureStore.setItemAsync(RECENT_SEARCHES_KEY, JSON.stringify(updated));
-  return updated;
-}
-
 export default function SearchScreen() {
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);

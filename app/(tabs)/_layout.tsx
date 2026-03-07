@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable } from "react-native";
+import { Pressable, View, Text } from "react-native";
 import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../constants/Colors";
@@ -10,14 +10,40 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.primary,
+        tabBarActiveTintColor: '#fff',
         tabBarInactiveTintColor: Colors.textSecondary,
+        tabBarShowLabel: true,
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '600',
+        },
+        tabBarLabelPosition: 'below-icon', // Force text not to wrap or squish
+        tabBarActiveBackgroundColor: '#a8c9a8',
+        tabBarItemStyle: {
+          borderRadius: 40,
+          marginVertical: 5,
+          marginHorizontal: 0, // Reduced from 12 to stop text from truncating horizontally
+          overflow: 'hidden',
+        },
         tabBarStyle: {
-          borderTopColor: Colors.border,
-          backgroundColor: Colors.surface,
+          position: 'absolute',
+          bottom: 30,
+          marginHorizontal: '5%',
+          elevation: 5,
+          backgroundColor: '#FFF1DA',
+          borderRadius: 40,
+          height: 70, // Increased slightly from 64 so text fits
+          borderTopWidth: 0,
+          shadowColor: Colors.heading,
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.2,
+          shadowRadius: 15,
+          paddingBottom: 0,
+          paddingTop: 2,
+          paddingHorizontal: 8, // Reduced from 15 to give labels more width
         },
         headerStyle: {
-          backgroundColor: Colors.surface,
+          backgroundColor: Colors.background,
         },
         headerTintColor: Colors.heading,
       }}
@@ -26,6 +52,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: "Explore",
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="compass-outline" size={size} color={color} />
           ),

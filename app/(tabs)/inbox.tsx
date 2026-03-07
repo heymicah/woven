@@ -17,13 +17,13 @@ const SECTIONS = [
 
 export default function InboxScreen() {
   return (
-    <View className="flex-1 bg-gray-50">
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <SectionList
         sections={SECTIONS}
         keyExtractor={(item, index) => item + index}
         renderSectionHeader={({ section: { title } }) => (
-          <View className="px-4 py-3 bg-gray-50">
-            <Text className="text-lg font-bold text-gray-900">{title}</Text>
+          <View style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: Colors.background }}>
+            <Text style={{ fontSize: 18, fontWeight: "bold", color: Colors.text }}>{title}</Text>
           </View>
         )}
         renderItem={({ item }) => (

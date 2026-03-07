@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { Item } from "../models/Item";
 import { User } from "../models/User";
 import { Transaction } from "../models/Transaction";
+import mongoose from "mongoose";
 import { AuthRequest, ItemStatus, TransactionType } from "../types";
 
 const POST_REWARD = 1;
@@ -53,10 +54,15 @@ export async function createItem(
   res: Response
 ): Promise<void> {
   try {
+    console.log("[createItem] userId:", req.userId);
+    console.log("[createItem] req.body:", JSON.stringify(req.body, null, 2));
+
     const item = await Item.create({
       ...req.body,
       postedBy: req.userId,
     });
+
+    console.log("[createItem] Item created:", item._id);
 
     // Reward token for posting
     await User.findByIdAndUpdate(req.userId, {
@@ -72,8 +78,13 @@ export async function createItem(
     });
 
     res.status(201).json(item);
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
+  } catch (error: any) {
+    console.error("[createItem] ERROR:", error.message);
+    console.error("[createItem] Stack:", error.stack);
+    if (error.name === "ValidationError") {
+      console.error("[createItem] Validation details:", JSON.stringify(error.errors, null, 2));
+    }
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 }
 

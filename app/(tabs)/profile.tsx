@@ -16,13 +16,12 @@ import { itemsService } from "../../services/items.service";
 import { Item, ItemStatus } from "../../types";
 import { useRouter } from "expo-router";
 
-type ProfileTab = "current" | "past" | "received" | "likes";
+type ProfileTab = "current" | "past" | "received";
 
 const TABS: { key: ProfileTab; label: string }[] = [
   { key: "current", label: "Current" },
   { key: "past", label: "Past" },
   { key: "received", label: "Received" },
-  { key: "likes", label: "Likes" },
 ];
 
 export default function ProfileScreen() {
@@ -69,8 +68,8 @@ export default function ProfileScreen() {
         return pastItems;
       case "received":
         return claimedItems;
-      case "likes":
-        return [];
+      case "received":
+        return claimedItems;
       default:
         return [];
     }
@@ -84,8 +83,6 @@ export default function ProfileScreen() {
         return { icon: "time-outline" as const, message: "No past listings" };
       case "received":
         return { icon: "bag-outline" as const, message: "No received items yet" };
-      case "likes":
-        return { icon: "heart-outline" as const, message: "No liked items yet" };
     }
   };
 
@@ -93,7 +90,7 @@ export default function ProfileScreen() {
   const emptyState = getEmptyState();
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.surface }}>
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
@@ -107,7 +104,7 @@ export default function ProfileScreen() {
             paddingTop: 90,
             paddingBottom: 20,
             paddingHorizontal: 20,
-            backgroundColor: Colors.surface,
+            backgroundColor: Colors.background,
           }}
         >
           {/* Avatar */}
@@ -244,19 +241,19 @@ export default function ProfileScreen() {
         <View
           style={{
             flexDirection: "row",
-            backgroundColor: Colors.surface,
+            backgroundColor: Colors.background,
             paddingHorizontal: 12,
             paddingTop: 8,
             borderBottomWidth: 1,
-            borderBottomColor: Colors.border,
+            borderBottomColor: Colors.brown.dark,
           }}
         >
           {TABS.map((tab) => {
-            const isActive = activeTab === tab.key;
+            const isActive = activeTab === (tab.key as any);
             return (
               <Pressable
                 key={tab.key}
-                onPress={() => setActiveTab(tab.key)}
+                onPress={() => setActiveTab(tab.key as any)}
                 style={{
                   flex: 1,
                   alignItems: "center",
@@ -265,9 +262,9 @@ export default function ProfileScreen() {
                   borderTopLeftRadius: 14,
                   borderTopRightRadius: 14,
                   backgroundColor: isActive ? Colors.primary : "transparent",
-                  borderWidth: isActive ? 0 : 1,
-                  borderBottomWidth: 0,
-                  borderColor: Colors.border,
+                  borderWidth: 1,
+                  borderBottomWidth: isActive ? 0 : 1,
+                  borderColor: Colors.brown.dark,
                   marginBottom: -1,
                 }}
               >
@@ -275,7 +272,7 @@ export default function ProfileScreen() {
                   style={{
                     fontSize: 13,
                     fontWeight: isActive ? "700" : "500",
-                    color: isActive ? Colors.heading : Colors.textSecondary,
+                    color: isActive ? Colors.brown.dark : Colors.textSecondary,
                   }}
                 >
                   {tab.label}
@@ -310,7 +307,7 @@ export default function ProfileScreen() {
                   marginBottom: 16,
                 }}
               >
-                <Ionicons name={emptyState.icon} size={32} color={Colors.primary} />
+                <Ionicons name={emptyState?.icon as any} size={32} color={Colors.primary} />
               </View>
               <Text
                 style={{
@@ -319,20 +316,8 @@ export default function ProfileScreen() {
                   color: Colors.textSecondary,
                 }}
               >
-                {emptyState.message}
+                {emptyState?.message}
               </Text>
-              {activeTab === "likes" && (
-                <Text
-                  style={{
-                    fontSize: 13,
-                    color: Colors.accent,
-                    marginTop: 8,
-                    textAlign: "center",
-                  }}
-                >
-                  Tap the ♥ on items you love — they'll show up here!
-                </Text>
-              )}
             </View>
           ) : (
             tabData.map((item) => (
