@@ -312,7 +312,7 @@ export default function SettingsScreen() {
                                 opacity: saving ? 0.6 : 1,
                             }}
                         >
-                            <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 15 }}>
+                            <Text style={{ color: Colors.heading, fontWeight: "700", fontSize: 15 }}>
                                 {saving ? "Saving..." : "Save Changes"}
                             </Text>
                         </Pressable>
@@ -414,7 +414,7 @@ export default function SettingsScreen() {
                                         opacity: changingPassword ? 0.6 : 1,
                                     }}
                                 >
-                                    <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 14 }}>
+                                    <Text style={{ color: Colors.heading, fontWeight: "700", fontSize: 14 }}>
                                         {changingPassword ? "Updating..." : "Update Password"}
                                     </Text>
                                 </Pressable>

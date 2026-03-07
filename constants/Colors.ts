@@ -1,6 +1,6 @@
 export const Colors = {
-  primary: "#e28d9b",       // Pink – buttons, active states
-  secondary: "#f9c2cb",     // Light pink – accents, highlights
+  primary: "#ffd1d9",       // Pink – buttons, active states
+  secondary: "#e28d9b",     // Light pink – accents, highlights
   accent: "#96755f",        // Brown – surface accents
   background: "#fae5c4",    // Beige – page backgrounds
   surface: "#fffcf6",       // Warm white – cards, panels

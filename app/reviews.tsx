@@ -181,7 +181,7 @@ export default function ReviewsScreen() {
                                 style={{
                                     fontSize: 13,
                                     fontWeight: isActive ? "700" : "500",
-                                    color: isActive ? "#FFFFFF" : Colors.text,
+                                    color: isActive ? Colors.heading : Colors.text,
                                 }}
                             >
                                 {option.label}

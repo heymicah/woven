@@ -275,7 +275,7 @@ export default function ProfileScreen() {
                   style={{
                     fontSize: 13,
                     fontWeight: isActive ? "700" : "500",
-                    color: isActive ? "#FFFFFF" : Colors.textSecondary,
+                    color: isActive ? Colors.heading : Colors.textSecondary,
                   }}
                 >
                   {tab.label}
