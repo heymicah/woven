@@ -352,7 +352,7 @@ export default function ItemDetailScreen() {
           <Pressable
             onPress={() => Alert.alert("Message", "Messaging coming soon!")}
             className="rounded-full py-4 items-center"
-            style={{ backgroundColor: "#A8C9A8" }}
+            style={{ backgroundColor: Palette.rose }}
           >
             <Text className="font-semibold text-base" style={{ color: Palette.green, fontFamily: "Quicksand_600SemiBold" }}>
               Message
