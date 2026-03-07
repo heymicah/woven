@@ -1,5 +1,6 @@
 import React from "react";
 import { View, FlatList, Text } from "react-native";
+import { useRouter } from "expo-router";
 import { ItemCard } from "../../components/ItemCard";
 import { Item, ItemCategory, ItemCondition, ItemSize, ItemStatus } from "../../types";
 
@@ -12,7 +13,14 @@ const MOCK_ITEMS: Item[] = [
     category: ItemCategory.OUTERWEAR,
     size: ItemSize.M,
     condition: ItemCondition.GOOD,
-    imageUrls: [],
+    imageUrls: [
+      "https://picsum.photos/seed/denim1/600/800",
+      "https://picsum.photos/seed/denim2/600/800",
+      "https://picsum.photos/seed/denim3/600/800",
+      "https://picsum.photos/seed/denim4/600/800",
+      "https://picsum.photos/seed/denim5/600/800",
+      "https://picsum.photos/seed/denim6/600/800",
+    ],
     tokenCost: 1,
     status: ItemStatus.AVAILABLE,
     postedBy: "user1",
@@ -26,7 +34,11 @@ const MOCK_ITEMS: Item[] = [
     category: ItemCategory.DRESSES,
     size: ItemSize.S,
     condition: ItemCondition.LIKE_NEW,
-    imageUrls: [],
+    imageUrls: [
+      "https://picsum.photos/seed/floral1/600/800",
+      "https://picsum.photos/seed/floral2/600/800",
+      "https://picsum.photos/seed/floral3/600/800",
+    ],
     tokenCost: 1,
     status: ItemStatus.AVAILABLE,
     postedBy: "user2",
@@ -40,7 +52,10 @@ const MOCK_ITEMS: Item[] = [
     category: ItemCategory.ACCESSORIES,
     size: ItemSize.ONE_SIZE,
     condition: ItemCondition.NEW,
-    imageUrls: [],
+    imageUrls: [
+      "https://picsum.photos/seed/beanie1/600/800",
+      "https://picsum.photos/seed/beanie2/600/800",
+    ],
     tokenCost: 1,
     status: ItemStatus.AVAILABLE,
     postedBy: "user3",
@@ -50,6 +65,7 @@ const MOCK_ITEMS: Item[] = [
 ];
 
 export default function ExploreScreen() {
+  const router = useRouter();
   // TODO: Fetch items from API, add pull-to-refresh, pagination
   return (
     <View className="flex-1 bg-gray-50">
@@ -60,8 +76,7 @@ export default function ExploreScreen() {
           <ItemCard
             item={item}
             onPress={(i) => {
-              // TODO: Navigate to item detail screen
-              console.log("Pressed item:", i._id);
+              router.push(`/item/${i._id}`);
             }}
           />
         )}

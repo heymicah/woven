@@ -1,6 +1,14 @@
 import "../global.css";
 import React from "react";
-import { Slot, Redirect } from "expo-router";
+import { Stack, Redirect } from "expo-router";
+import { useFonts } from "@expo-google-fonts/quicksand";
+import {
+  Quicksand_300Light,
+  Quicksand_400Regular,
+  Quicksand_500Medium,
+  Quicksand_600SemiBold,
+  Quicksand_700Bold,
+} from "@expo-google-fonts/quicksand";
 import { AuthProvider } from "../context/AuthContext";
 import { useAuth } from "../hooks/useAuth";
 import { LoadingScreen } from "../components/LoadingScreen";
@@ -20,10 +28,22 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Quicksand_300Light,
+    Quicksand_400Regular,
+    Quicksand_500Medium,
+    Quicksand_600SemiBold,
+    Quicksand_700Bold,
+  });
+
+  if (!fontsLoaded) {
+    return <LoadingScreen />;
+  }
+
   return (
     <AuthProvider>
       <RootNavigator />
-      <Slot />
+      <Stack screenOptions={{ headerShown: false }} />
     </AuthProvider>
   );
 }
