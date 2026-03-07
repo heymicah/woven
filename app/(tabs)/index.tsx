@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   ScrollView,
@@ -6,73 +6,43 @@ import {
   Image,
   Pressable,
   useWindowDimensions,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Colors } from "../../constants/Colors";
-import { Item, ItemCategory, ItemCondition, ItemSize, ItemStatus } from "../../types";
-
-const MOCK_ITEMS: Item[] = [
-  {
-    _id: "1",
-    title: "Vintage Denim Jacket",
-    description: "Classic 90s denim jacket in great condition. Perfect for layering.",
-    category: ItemCategory.OUTERWEAR,
-    size: ItemSize.M,
-    condition: ItemCondition.GOOD,
-    imageUrls: [
-      "https://picsum.photos/seed/denim1/600/800",
-      "https://picsum.photos/seed/denim2/600/800",
-      "https://picsum.photos/seed/denim3/600/800",
-      "https://picsum.photos/seed/denim4/600/800",
-      "https://picsum.photos/seed/denim5/600/800",
-      "https://picsum.photos/seed/denim6/600/800",
-    ],
-    tokenCost: 1,
-    status: ItemStatus.AVAILABLE,
-    postedBy: "user1",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: "2",
-    title: "Floral Summer Dress",
-    description: "Light and breezy floral print dress. Great for warm weather.",
-    category: ItemCategory.DRESSES,
-    size: ItemSize.S,
-    condition: ItemCondition.LIKE_NEW,
-    imageUrls: [
-      "https://picsum.photos/seed/floral1/600/800",
-      "https://picsum.photos/seed/floral2/600/800",
-      "https://picsum.photos/seed/floral3/600/800",
-    ],
-    tokenCost: 1,
-    status: ItemStatus.AVAILABLE,
-    postedBy: "user2",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: "3",
-    title: "Wool Beanie",
-    description: "Hand-knitted wool beanie in forest green.",
-    category: ItemCategory.ACCESSORIES,
-    size: ItemSize.ONE_SIZE,
-    condition: ItemCondition.NEW,
-    imageUrls: [
-      "https://picsum.photos/seed/beanie1/600/800",
-      "https://picsum.photos/seed/beanie2/600/800",
-    ],
-    tokenCost: 1,
-    status: ItemStatus.AVAILABLE,
-    postedBy: "user3",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+import { Item } from "../../types";
+import { itemsService } from "../../services/items.service";
 
 export default function ExploreScreen() {
   const router = useRouter();
-  const items = MOCK_ITEMS;
+  const [items, setItems] = useState<Item[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchItems = useCallback(async () => {
+    try {
+      setError(null);
+      const data = await itemsService.getAll();
+      setItems(data);
+    } catch (err: any) {
+      console.error("[Explore] Failed to fetch items:", err.message);
+      setError("Couldn't load items. Pull down to retry.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchItems();
+  }, [fetchItems]);
 
   // Split items into 2 columns for masonry layout
   const leftColumn: Item[] = [];
@@ -90,7 +60,6 @@ export default function ExploreScreen() {
 
   const renderItem = (item: Item) => {
     // Generate a pseudo-random height between 180 and 320 based on the item ID
-    // This creates the asymmetrical Pinterest/masonry look
     const hash = item._id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const height = 180 + (hash % 140);
 
@@ -127,8 +96,21 @@ export default function ExploreScreen() {
       <ScrollView
         contentContainerStyle={{ padding, paddingTop: 90, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
-        {items.length === 0 ? (
+        {loading ? (
+          <View style={{ alignItems: "center", paddingTop: 60 }}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+          </View>
+        ) : error ? (
+          <View style={{ alignItems: "center", paddingTop: 60 }}>
+            <Text style={{ color: Colors.textSecondary, fontSize: 16, textAlign: "center" }}>
+              {error}
+            </Text>
+          </View>
+        ) : items.length === 0 ? (
           <View style={{ alignItems: "center", paddingTop: 60 }}>
             <Text style={{ color: Colors.textSecondary, fontSize: 16 }}>No items found</Text>
           </View>
