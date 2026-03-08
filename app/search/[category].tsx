@@ -83,13 +83,12 @@ export default function CategorySearchScreen() {
         <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 10 }}>
           <Ionicons name="arrow-back" size={22} color={Colors.text} />
         </TouchableOpacity>
-        <Ionicons name="search" size={18} color={Colors.textSecondary} style={{ marginRight: 8 }} />
         <TextInput
           style={{
             flex: 1,
             color: Colors.text,
             fontSize: 16,
-            lineHeight: 22,
+            paddingVertical: 0,
           }}
           placeholder="Search items..."
           placeholderTextColor={Colors.textSecondary}
