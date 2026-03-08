@@ -16,6 +16,7 @@ import { itemsService } from "../../services/items.service";
 import { reviewsService } from "../../services/reviews.service";
 import { Item, ItemStatus } from "../../types";
 import { useRouter, useFocusEffect } from "expo-router";
+import { fetchAspectRatiosBatch } from "../../utils/image";
 
 type ProfileTab = "current" | "past" | "received" | "liked";
 
