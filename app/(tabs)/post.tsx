@@ -9,7 +9,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Pressable,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Colors } from "../../constants/Colors";
@@ -158,7 +160,8 @@ export default function PostScreen() {
 
   // ── Load existing item for edit ─────────────────────────────
   useEffect(() => {
-    if (isEditMode) {
+    if (id) {
+      setInitialLoading(true);
       itemsService
         .getById(id)
         .then((item) => {
@@ -176,8 +179,18 @@ export default function PostScreen() {
           router.back();
         })
         .finally(() => setInitialLoading(false));
+    } else {
+      // Clear form for "New Post"
+      setPhotos([]);
+      setTitle("");
+      setCategory("");
+      setIntendedFit("");
+      setSize("");
+      setCondition("");
+      setDescription("");
+      setInitialLoading(false);
     }
-  }, [id, isEditMode]);
+  }, [id, router]);
 
   // ── Submit ──────────────────────────────────────────────────
   async function handleSubmit() {
@@ -260,7 +273,32 @@ export default function PostScreen() {
           ) : (
             <>
               {/* Header */}
-              <Text style={styles.heading}>{isEditMode ? "Edit Post" : "New Post"}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}>
+                {isEditMode && (
+                  <Pressable
+                    onPress={() => router.back()}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 20,
+                      backgroundColor: "#FFF1DA",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 12,
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 2,
+                      elevation: 2,
+                    }}
+                  >
+                    <Ionicons name="arrow-back" size={24} color={Colors.text} />
+                  </Pressable>
+                )}
+                <Text style={[styles.heading, { marginBottom: 0 }]}>
+                  {isEditMode ? "Edit Post" : "New Post"}
+                </Text>
+              </View>
 
               {/* 1. Photos */}
               <PhotoStrip
@@ -348,6 +386,7 @@ export default function PostScreen() {
           disabled={!isFormValid}
           loading={isSubmitting}
           onPress={handleSubmit}
+          label={isEditMode ? "Update Item" : "Post Item"}
         />
 
         {/* Crop modal */}
