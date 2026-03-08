@@ -3,7 +3,6 @@ import {
   View,
   ScrollView,
   Text,
-  Image,
   Pressable,
   useWindowDimensions,
   ActivityIndicator,
@@ -31,8 +30,6 @@ export default function ExploreScreen() {
       setError(null);
       const data = await itemsService.getAll();
       setItems(data);
-
-      // Batch fetch aspect ratios to prevent glitching
       const uris = data.map(item => item.imageUrls?.[0]).filter((u): u is string => !!u);
       const ratiosMap = await fetchAspectRatiosBatch(uris);
       setAspectRatios(prev => ({ ...prev, ...ratiosMap }));
@@ -45,88 +42,61 @@ export default function ExploreScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+  useEffect(() => { fetchItems(); }, [fetchItems]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchItems();
   }, [fetchItems]);
 
-  // Split items into 2 columns using a "greedy" balancing algorithm
-  const leftColumn: Item[] = [];
-  const rightColumn: Item[] = [];
-  let leftHeight = 0;
-  let rightHeight = 0;
-
+  // Masonry columns
+  const leftCol: Item[] = [];
+  const rightCol: Item[] = [];
+  let lh = 0, rh = 0;
   items.forEach((item) => {
-    const ratio = aspectRatios[item._id] || 1;
-    const heightWeight = 1 / ratio; // Estimated relative height
-
-    if (leftHeight <= rightHeight) {
-      leftColumn.push(item);
-      leftHeight += heightWeight;
-    } else {
-      rightColumn.push(item);
-      rightHeight += heightWeight;
-    }
+    const hw = 1 / (aspectRatios[item._id] || 1);
+    if (lh <= rh) { leftCol.push(item); lh += hw; }
+    else { rightCol.push(item); rh += hw; }
   });
 
   const { width } = useWindowDimensions();
   const gap = 12;
   const padding = 16;
-  const columnWidth = (width - padding * 2 - gap) / 2;
+  const colW = (width - padding * 2 - gap) / 2;
 
-  const renderItem = (itemData: Item) => {
-    const photoUri = itemData.imageUrls && itemData.imageUrls.length > 0
-      ? itemData.imageUrls[0]
-      : "https://via.placeholder.com/300x400?text=No+Image";
-
-    return (
-      <MasonryImage
-        key={itemData._id}
-        uri={photoUri}
-        aspectRatio={aspectRatios[itemData._id]}
-        columnWidth={columnWidth}
-        onPress={() => router.push(`/item/${itemData._id}`)}
-      />
-    );
-  };
+  const renderItem = (d: Item) => (
+    <MasonryImage
+      key={d._id}
+      uri={d.imageUrls?.[0] ?? "https://via.placeholder.com/300x400?text=No+Image"}
+      aspectRatio={aspectRatios[d._id]}
+      columnWidth={colW}
+      onPress={() => router.push(`/item/${d._id}`)}
+    />
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView
         contentContainerStyle={{ padding, paddingTop: insets.top + 16, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {loading ? (
-          <View style={{ alignItems: "center", paddingTop: 60 }}>
+          <View style={{ alignItems: "center", paddingTop: 100 }}>
             <ActivityIndicator size="large" color={Colors.primary} />
           </View>
         ) : error ? (
-          <View style={{ alignItems: "center", paddingTop: 60 }}>
-            <Text style={{ color: Colors.textSecondary, fontSize: 16, textAlign: "center", fontFamily: "Quicksand_400Regular" }}>
-              {error}
-            </Text>
+          <View style={{ alignItems: "center", paddingTop: 100 }}>
+            <Text style={{ color: Colors.textSecondary, fontSize: 16, textAlign: "center", fontFamily: "Quicksand_400Regular" }}>{error}</Text>
           </View>
         ) : items.length === 0 ? (
-          <View style={{ alignItems: "center", paddingTop: 60 }}>
+          <View style={{ alignItems: "center", paddingTop: 100 }}>
             <Text style={{ color: Colors.textSecondary, fontSize: 16, fontFamily: "Quicksand_400Regular" }}>No items found</Text>
           </View>
         ) : (
           <View style={{ flexDirection: "row", gap }}>
-            {/* Left Column */}
-            <View style={{ flex: 1 }}>
-              {leftColumn.map((item) => renderItem(item))}
-            </View>
-            {/* Right Column */}
-            <View style={{ flex: 1 }}>
-              {rightColumn.map((item) => renderItem(item))}
-            </View>
+            <View style={{ flex: 1 }}>{leftCol.map(renderItem)}</View>
+            <View style={{ flex: 1 }}>{rightCol.map(renderItem)}</View>
           </View>
         )}
       </ScrollView>
