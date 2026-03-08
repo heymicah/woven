@@ -237,18 +237,16 @@ export default function PublicProfileScreen() {
           </View>
         </View>
 
-        {/* Subtab Bar (Filing Cabinet Style) */}
+        {/* Subtab Bar */}
         <View
           style={{
             flexDirection: "row",
             backgroundColor: Colors.background,
-            paddingHorizontal: 12,
+            marginHorizontal: 16,
             paddingTop: 8,
-            borderBottomWidth: 1,
-            borderBottomColor: Colors.brown.dark,
           }}
         >
-          {TABS.map((tab) => {
+          {TABS.map((tab, index) => {
             const isActive = activeTab === tab.key;
             return (
               <Pressable
@@ -258,14 +256,13 @@ export default function PublicProfileScreen() {
                   flex: 1,
                   alignItems: "center",
                   paddingVertical: 10,
-                  marginHorizontal: 3,
-                  borderTopLeftRadius: 14,
-                  borderTopRightRadius: 14,
-                  backgroundColor: isActive ? Colors.primary : "transparent",
-                  borderWidth: 1,
+                  borderTopWidth: isActive ? 1 : 0,
+                  borderLeftWidth: isActive ? 1 : 0,
+                  borderRightWidth: isActive ? 1 : 0,
                   borderBottomWidth: isActive ? 0 : 1,
                   borderColor: Colors.brown.dark,
-                  marginBottom: -1,
+                  borderTopLeftRadius: isActive ? 14 : 0,
+                  borderTopRightRadius: isActive ? 14 : 0,
                 }}
               >
                 <Text
@@ -283,7 +280,15 @@ export default function PublicProfileScreen() {
         </View>
 
         {/* Grid Content */}
-        <View style={{ padding: padding, flexDirection: "row", gap: gap }}>
+        <View style={{
+          marginHorizontal: 16,
+          borderLeftWidth: 1,
+          borderRightWidth: 1,
+          borderColor: Colors.brown.dark,
+          padding: padding,
+          flexDirection: "row",
+          gap: gap,
+        }}>
           {items.length === 0 ? (
             <View style={{ flex: 1, alignItems: "center", paddingTop: 60 }}>
               <View
