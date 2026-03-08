@@ -7,10 +7,10 @@ import {
   ActivityIndicator,
   RefreshControl,
   Image,
+  useWindowDimensions,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "../../hooks/useAuth";
-import { ItemCard } from "../../components/ItemCard";
 import { Colors } from "../../constants/Colors";
 import { itemsService } from "../../services/items.service";
 import { Item, ItemStatus } from "../../types";
@@ -27,6 +27,7 @@ const TABS: { key: ProfileTab; label: string }[] = [
 export default function ProfileScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const [activeTab, setActiveTab] = useState<ProfileTab>("current");
   const [myItems, setMyItems] = useState<Item[]>([]);
   const [claimedItems, setClaimedItems] = useState<Item[]>([]);
@@ -320,15 +321,60 @@ export default function ProfileScreen() {
               </Text>
             </View>
           ) : (
-            tabData.map((item) => (
-              <ItemCard
-                key={item._id}
-                item={item}
-                onPress={(i) => {
-                  console.log("Pressed item:", i._id);
-                }}
-              />
-            ))
+            (() => {
+              const leftColumn: Item[] = [];
+              const rightColumn: Item[] = [];
+              tabData.forEach((item, index) => {
+                if (index % 2 === 0) leftColumn.push(item);
+                else rightColumn.push(item);
+              });
+
+              const gap = 12;
+              const columnWidth = (width - 32 - gap) / 2;
+
+              const renderMasonryItem = (item: Item) => {
+                const hash = item._id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                const height = 180 + (hash % 140);
+                const sourceUri = item.imageUrls && item.imageUrls.length > 0
+                  ? item.imageUrls[0]
+                  : "https://via.placeholder.com/300x400?text=No+Image";
+
+                return (
+                  <Pressable
+                    key={item._id}
+                    onPress={() => router.push(`/item/${item._id}`)}
+                    style={{
+                      height,
+                      marginBottom: gap,
+                      borderRadius: 16,
+                      backgroundColor: "#C4DBC4",
+                      overflow: "hidden",
+                      borderWidth: 1,
+                      borderColor: Colors.border,
+                    }}
+                  >
+                    <Image
+                      source={{ uri: sourceUri }}
+                      style={{ width: "100%", height: "100%" }}
+                      resizeMode="cover"
+                    />
+                  </Pressable>
+                );
+              };
+
+              return (
+                <View style={{ flexDirection: "row", gap, width: "100%" }}>
+                  {/* Left Column */}
+                  <View style={{ flex: 1 }}>
+                    {leftColumn.map((item) => renderMasonryItem(item))}
+                  </View>
+                  {/* Right Column */}
+                  <View style={{ flex: 1 }}>
+                    {rightColumn.map((item) => renderMasonryItem(item))}
+                  </View>
+                </View>
+              );
+            })()
           )}
         </View>
       </ScrollView >

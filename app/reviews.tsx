@@ -104,7 +104,7 @@ export default function ReviewsScreen() {
                 }}
             >
                 <Pressable
-                    onPress={() => router.replace("/(tabs)/profile")}
+                    onPress={() => router.back()}
                     style={{
                         width: 36,
                         height: 36,

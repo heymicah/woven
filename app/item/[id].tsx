@@ -9,8 +9,8 @@ import {
   Alert,
   Dimensions,
   Modal,
-  ViewToken,
   ActivityIndicator,
+  ViewToken,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
@@ -165,20 +165,40 @@ export default function ItemDetailScreen() {
           >
             <Ionicons name="arrow-back" size={20} color={Palette.dark} />
           </Pressable>
-          <Pressable
-            onPress={() => Alert.alert("Share", "Sharing coming soon!")}
-            className="w-10 h-10 rounded-full items-center justify-center"
-            style={{
-              backgroundColor: "#FFF1DA",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.15,
-              shadowRadius: 3,
-              elevation: 3,
-            }}
-          >
-            <Ionicons name="share-outline" size={20} color={Palette.dark} />
-          </Pressable>
+
+          <View className="flex-row items-center" style={{ gap: 8 }}>
+            {postedBy && user?._id === postedBy._id && (
+              <Pressable
+                onPress={() => router.push(`/(tabs)/post?id=${item._id}`)}
+                className="w-10 h-10 rounded-full items-center justify-center"
+                style={{
+                  backgroundColor: "#FFF1DA",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 3,
+                  elevation: 3,
+                }}
+              >
+                <Ionicons name="create-outline" size={20} color={Palette.dark} />
+              </Pressable>
+            )}
+
+            <Pressable
+              onPress={() => Alert.alert("Share", "Sharing coming soon!")}
+              className="w-10 h-10 rounded-full items-center justify-center"
+              style={{
+                backgroundColor: "#FFF1DA",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.15,
+                shadowRadius: 3,
+                elevation: 3,
+              }}
+            >
+              <Ionicons name="share-outline" size={20} color={Palette.dark} />
+            </Pressable>
+          </View>
         </View>
 
         {/* Main Photo Carousel */}
