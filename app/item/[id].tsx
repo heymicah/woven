@@ -16,8 +16,10 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../constants/Colors";
-import { Item } from "../../types";
+import { useAuth } from "../../hooks/useAuth";
+import { messagesService } from "../../services/messages.service";
 import { itemsService } from "../../services/items.service";
+import { Item } from "../../types";
 
 // Palette: #FFD1D9, #E28D9B, #FAE5C4, #96755F, #411E12
 const Palette = {
@@ -82,16 +84,15 @@ export default function ItemDetailScreen() {
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
 
+  const { user } = useAuth();
+
   useEffect(() => {
     if (!id) return;
     setLoading(true);
     itemsService
       .getById(id)
       .then((data) => setItem(data))
-      .catch((err) => {
-        console.error("[ItemDetail] Failed to fetch item:", err.message);
-        setError("Couldn't load this item.");
-      })
+      .catch(() => setError("Could not load item"))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -336,26 +337,31 @@ export default function ItemDetailScreen() {
       </ScrollView>
 
       {/* Docked Message Button */}
-      <SafeAreaView edges={["bottom"]} style={{ backgroundColor: Palette.cream }}>
-        <View className="px-4 pb-4">
-          <Pressable
-            onPress={() => Alert.alert("Message", "Messaging coming soon!")}
-            className="rounded-full py-4 items-center"
-            style={{ backgroundColor: "#A8C9A8" }}
-          >
-            <Text className="font-semibold text-base" style={{ color: Palette.dark, fontFamily: "Quicksand_600SemiBold" }}>
-              Message
-            </Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
-
-      {/* Fullscreen Photo Overlay */}
-      <FullscreenImageModal
-        visible={fullscreenVisible}
-        uri={images[currentImageIndex] || ""}
-        onClose={() => setFullscreenVisible(false)}
-      />
+      {postedBy && user?._id !== postedBy._id && (
+        <SafeAreaView edges={["bottom"]} style={{ backgroundColor: Palette.cream }}>
+          <View className="px-4 pb-4">
+            <Pressable
+              onPress={async () => {
+                try {
+                  const convo = await messagesService.getOrCreateConversation(
+                    postedBy!._id,
+                    item._id
+                  );
+                  router.push(`/chat/${convo._id}`);
+                } catch (error) {
+                  Alert.alert("Error", "Could not start conversation");
+                }
+              }}
+              className="rounded-full py-4 items-center"
+              style={{ backgroundColor: Palette.rose }}
+            >
+              <Text className="font-semibold text-base" style={{ color: Palette.dark, fontFamily: "Quicksand_600SemiBold" }}>
+                Message
+              </Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      )}
     </View>
   );
 }

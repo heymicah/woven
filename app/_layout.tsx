@@ -10,6 +10,7 @@ import {
   Quicksand_700Bold,
 } from "@expo-google-fonts/quicksand";
 import { AuthProvider } from "../context/AuthContext";
+import { SocketProvider } from "../context/SocketContext";
 import { useAuth } from "../hooks/useAuth";
 import { LoadingScreen } from "../components/LoadingScreen";
 
@@ -42,8 +43,10 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <RootNavigator />
-      <Stack screenOptions={{ headerShown: false }} />
+      <SocketProvider>
+        <RootNavigator />
+        <Stack screenOptions={{ headerShown: false }} />
+      </SocketProvider>
     </AuthProvider>
   );
 }
