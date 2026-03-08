@@ -21,6 +21,13 @@ module.exports = {
         },
       },
     },
+    fontFamily: {
+      sans: ["Quicksand_400Regular"],
+      light: ["Quicksand_300Light"],
+      medium: ["Quicksand_500Medium"],
+      semibold: ["Quicksand_600SemiBold"],
+      bold: ["Quicksand_700Bold"],
+    },
   },
   plugins: [],
 };

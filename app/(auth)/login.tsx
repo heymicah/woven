@@ -1,7 +1,6 @@
 import React, { useRef, useState } from "react";
 import {
   View,
-  Text,
   TextInput,
   Pressable,
   Alert,
@@ -10,6 +9,7 @@ import {
   TouchableWithoutFeedback,
   Image,
 } from "react-native";
+import { ThemedText } from "../../components/ThemedText";
 import { router } from "expo-router";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -45,9 +45,9 @@ export default function LoginScreen() {
             style={{ width: 300, height: 120, alignSelf: "center", marginBottom: -16 }}
             resizeMode="contain"
           />
-          <Text className="text-base text-center text-gray-500 mb-10">
+          <ThemedText style={{ fontSize: 16, textAlign: "center", color: "#6B7280", marginBottom: 40 }}>
             Community clothing upcycling
-          </Text>
+          </ThemedText>
 
           <TextInput
             style={styles.input}
@@ -79,19 +79,19 @@ export default function LoginScreen() {
             className="bg-[#A8C9A8] rounded-full py-4 items-center"
             style={({ pressed }) => pressed && { opacity: 0.8 }}
           >
-            <Text className="text-[#411E12] font-semibold text-base">
+            <ThemedText variant="semibold" style={{ color: "#411E12", fontSize: 16 }}>
               {loading ? "Signing in..." : "Sign In"}
-            </Text>
+            </ThemedText>
           </Pressable>
 
           <Pressable
             onPress={() => router.push("/(auth)/register")}
             className="mt-6 items-center"
           >
-            <Text className="text-gray-500">
+            <ThemedText style={{ color: "#6B7280" }}>
               Don't have an account?{" "}
-              <Text className="text-[#411E12] font-semibold">Sign Up</Text>
-            </Text>
+              <ThemedText variant="semibold" style={{ color: "#411E12" }}>Sign Up</ThemedText>
+            </ThemedText>
           </Pressable>
         </View>
       </View>
@@ -118,5 +118,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     fontSize: 16,
     color: "#411E12",
+    fontFamily: "Quicksand_400Regular",
   },
 });

@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
-import { View, Text, FlatList, Pressable, ActivityIndicator } from "react-native";
+import { View, FlatList, Pressable, ActivityIndicator } from "react-native";
+import { ThemedText } from "../../components/ThemedText";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -89,9 +90,9 @@ export default function InboxScreen() {
     <View className="flex-1" style={{ backgroundColor: Palette.cream }}>
       {/* Header */}
       <View style={{ paddingTop: 70, paddingBottom: 12, paddingHorizontal: 20, backgroundColor: Palette.cream }}>
-        <Text style={{ fontSize: 22, fontWeight: "700", color: Palette.dark, fontFamily: "Quicksand_700Bold" }}>
+        <ThemedText variant="bold" style={{ fontSize: 22, color: Palette.dark }}>
           Inbox
-        </Text>
+        </ThemedText>
       </View>
 
       <FlatList
@@ -109,15 +110,16 @@ export default function InboxScreen() {
               size={48}
               color={Palette.brown}
             />
-            <Text
-              className="mt-3 text-base"
+            <ThemedText
+              variant="medium"
               style={{
+                fontSize: 16,
+                marginTop: 12,
                 color: Palette.brown,
-                fontFamily: "Quicksand_500Medium",
               }}
             >
               No conversations yet
-            </Text>
+            </ThemedText>
           </View>
         }
         renderItem={({ item: convo }) => {
@@ -138,38 +140,37 @@ export default function InboxScreen() {
               />
               <View className="flex-1 ml-3">
                 <View className="flex-row items-center justify-between">
-                  <Text
-                    className="text-base font-semibold"
+                  <ThemedText
+                    variant="semibold"
                     style={{
+                      fontSize: 16,
                       color: Palette.dark,
-                      fontFamily: "Quicksand_600SemiBold",
                     }}
                   >
                     {otherUser?.username ?? "Unknown"}
-                  </Text>
+                  </ThemedText>
                   {convo.lastMessage && (
-                    <Text
-                      className="text-xs"
+                    <ThemedText
                       style={{
+                        fontSize: 12,
                         color: Palette.brown,
-                        fontFamily: "Quicksand_400Regular",
                       }}
                     >
                       {timeAgo(convo.lastMessage.createdAt)}
-                    </Text>
+                    </ThemedText>
                   )}
                 </View>
                 {convo.lastMessage && (
-                  <Text
-                    className="text-sm mt-1"
+                  <ThemedText
                     numberOfLines={1}
                     style={{
+                      fontSize: 14,
+                      marginTop: 4,
                       color: Palette.brown,
-                      fontFamily: "Quicksand_400Regular",
                     }}
                   >
                     {convo.lastMessage.text}
-                  </Text>
+                  </ThemedText>
                 )}
               </View>
               <Ionicons
