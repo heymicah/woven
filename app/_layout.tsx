@@ -11,6 +11,7 @@ import {
 } from "@expo-google-fonts/quicksand";
 import { AuthProvider } from "../context/AuthContext";
 import { SocketProvider } from "../context/SocketContext";
+import { UnreadProvider } from "../context/UnreadContext";
 import { useAuth } from "../hooks/useAuth";
 import { LoadingScreen } from "../components/LoadingScreen";
 
@@ -64,7 +65,9 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <SocketProvider>
-        <RootLayoutNav />
+        <UnreadProvider>
+          <RootLayoutNav />
+        </UnreadProvider>
       </SocketProvider>
     </AuthProvider>
   );

@@ -58,7 +58,6 @@ export default function ProfileScreen() {
   const [myItems, setMyItems] = useState<Item[]>([]);
   const [claimedItems, setClaimedItems] = useState<Item[]>([]);
   const [likedItems, setLikedItems] = useState<Item[]>([]);
-  const [aspectRatios, setAspectRatios] = useState<{ [key: string]: number }>({});
   const [avgRating, setAvgRating] = useState(0);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -72,15 +71,11 @@ export default function ProfileScreen() {
         user?._id ? reviewsService.getForUser(user._id) : Promise.resolve({ reviews: [], avgRating: 0, totalReviews: 0 }),
       ]);
       setMyItems(mine);
-      setClaimedItems(claimed);
+      setClaimedItems(received);
       setLikedItems(liked);
       setAvgRating(reviewsData.avgRating);
 
-      // Batch fetch aspect ratios to prevent glitching
-      const allItems = [...mine, ...received, ...liked];
-      const uris = allItems.map(i => i.imageUrls?.[0]).filter((u): u is string => !!u);
-      const ratiosMap = await fetchAspectRatiosBatch(uris);
-      setAspectRatios(prev => ({ ...prev, ...ratiosMap }));
+
     } catch (error) {
       console.error("Failed to fetch profile data:", error);
     }
@@ -257,7 +252,7 @@ export default function ProfileScreen() {
                 }}
               >
                 {avgRating > 0 ? avgRating.toFixed(1) : "New"}
-              </ThemedText>
+              </Text>
               <Ionicons
                 name="chevron-forward"
                 size={14}

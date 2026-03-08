@@ -11,6 +11,7 @@ export interface Conversation {
   participants: Pick<User, "_id" | "username" | "avatarUrl">[];
   itemId?: string;
   lastMessage?: LastMessage;
+  unreadCount?: number;
   createdAt: string;
   updatedAt: string;
 }

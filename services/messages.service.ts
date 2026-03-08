@@ -40,4 +40,13 @@ export const messagesService = {
     );
     return data;
   },
+
+  markAsRead: async (conversationId: string): Promise<void> => {
+    await api.post(`/conversations/${conversationId}/read`);
+  },
+
+  getUnreadCount: async (): Promise<number> => {
+    const { data } = await api.get<{ count: number }>("/conversations/unread-count");
+    return data.count;
+  },
 };
