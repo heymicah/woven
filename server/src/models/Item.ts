@@ -13,6 +13,7 @@ export interface IItem extends Document {
   status: ItemStatus;
   postedBy: mongoose.Types.ObjectId;
   receivedBy?: mongoose.Types.ObjectId;
+  embedding?: number[];
 }
 
 const itemSchema = new Schema<IItem>(
@@ -52,6 +53,10 @@ const itemSchema = new Schema<IItem>(
     receivedBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
+    },
+    embedding: {
+      type: [Number],
+      select: false,
     },
   },
   { timestamps: true }

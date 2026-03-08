@@ -4,40 +4,95 @@ import { User } from "../models/User";
 import { Transaction } from "../models/Transaction";
 import mongoose from "mongoose";
 import { AuthRequest, ItemStatus, TransactionType } from "../types";
+import { generateEmbedding, buildEmbeddingText } from "../utils/embeddings";
 
 const POST_REWARD = 1;
 
 export async function getItems(req: Request, res: Response): Promise<void> {
   try {
     const { category, size, condition, search, userId, status } = req.query;
-    const filter: Record<string, any> = { status: status || ItemStatus.AVAILABLE };
 
-    if (userId) filter.postedBy = userId;
-
-    if (category) filter.category = category;
-    if (size) filter.size = size;
-    if (condition) filter.condition = condition;
+    // If search query provided, try vector search first, fall back to regex
     if (search) {
       const term = (search as string).trim();
-      // Strip common plural endings to get stem, then match with optional plural suffix
-      let stem = term;
-      if (/ies$/i.test(term)) {
-        stem = term.replace(/ies$/i, "");
-        // matches: stem + "y", stem + "ies"
-      } else if (/es$/i.test(term)) {
-        stem = term.replace(/es$/i, "");
-        // matches: stem, stem + "e", stem + "es"
-      } else if (/s$/i.test(term)) {
-        stem = term.replace(/s$/i, "");
-        // matches: stem, stem + "s"
+
+      try {
+        const queryVector = await generateEmbedding(term);
+
+        const pipeline: any[] = [
+          {
+            $vectorSearch: {
+              index: "vector_index",
+              queryVector,
+              path: "embedding",
+              numCandidates: 100,
+              limit: 50,
+            },
+          },
+          {
+            $addFields: { score: { $meta: "vectorSearchScore" } },
+          },
+          {
+            $match: {
+              score: { $gte: 0.6 },
+              status: (status as string) || ItemStatus.AVAILABLE,
+              ...(userId && { postedBy: new mongoose.Types.ObjectId(userId as string) }),
+              ...(category && { category }),
+              ...(size && { size }),
+              ...(condition && { condition }),
+            },
+          },
+          {
+            $lookup: {
+              from: "users",
+              localField: "postedBy",
+              foreignField: "_id",
+              as: "postedBy",
+              pipeline: [{ $project: { username: 1, avatarUrl: 1 } }],
+            },
+          },
+          { $unwind: { path: "$postedBy", preserveNullAndEmptyArrays: true } },
+          { $project: { embedding: 0 } },
+        ];
+
+        const items = await Item.aggregate(pipeline);
+        res.json(items);
+        return;
+      } catch (searchErr: any) {
+        console.warn("[getItems] Vector search failed, falling back to regex:", searchErr.message);
       }
-      // Regex: stem followed by optional plural endings
+
+      // Regex fallback
+      const filter: Record<string, any> = { status: status || ItemStatus.AVAILABLE };
+      if (userId) filter.postedBy = userId;
+      if (category) filter.category = category;
+      if (size) filter.size = size;
+      if (condition) filter.condition = condition;
+
+      let stem = term;
+      if (/ies$/i.test(term)) stem = term.replace(/ies$/i, "");
+      else if (/es$/i.test(term)) stem = term.replace(/es$/i, "");
+      else if (/s$/i.test(term)) stem = term.replace(/s$/i, "");
       const pattern = stem + "(?:y|ies|es|s|e)?";
       filter.$or = [
         { title: { $regex: pattern, $options: "i" } },
         { description: { $regex: pattern, $options: "i" } },
       ];
+
+      const items = await Item.find(filter)
+        .populate("postedBy", "username avatarUrl")
+        .sort({ createdAt: -1 });
+
+      res.json(items);
+      return;
     }
+
+    // No search — regular filtered listing
+    const filter: Record<string, any> = { status: status || ItemStatus.AVAILABLE };
+    if (userId) filter.postedBy = userId;
+    if (category) filter.category = category;
+    if (size) filter.size = size;
+    if (condition) filter.condition = condition;
 
     const items = await Item.find(filter)
       .populate("postedBy", "username avatarUrl")
@@ -79,6 +134,14 @@ export async function createItem(
 
     console.log("[createItem] Item created:", item._id);
 
+    // Generate embedding in background (don't block response)
+    generateEmbedding(buildEmbeddingText(item))
+      .then((embedding) => {
+        Item.findByIdAndUpdate(item._id, { embedding }).exec();
+        console.log("[createItem] Embedding saved for:", item._id);
+      })
+      .catch((err) => console.error("[createItem] Embedding failed:", err.message));
+
     res.status(201).json(item);
   } catch (error: any) {
     console.error("[createItem] ERROR:", error.message);
@@ -116,6 +179,15 @@ export async function updateItem(
       { $set: req.body },
       { new: true, runValidators: true }
     ).populate("postedBy", "username avatarUrl");
+
+    // Regenerate embedding in background
+    if (updatedItem) {
+      generateEmbedding(buildEmbeddingText(updatedItem))
+        .then((embedding) => {
+          Item.findByIdAndUpdate(updatedItem._id, { embedding }).exec();
+        })
+        .catch((err) => console.error("[updateItem] Embedding failed:", err.message));
+    }
 
     res.json(updatedItem);
   } catch (error: any) {
