@@ -30,6 +30,7 @@ export async function getMyConversations(
 
     res.json(result);
   } catch (error) {
+    console.error("getMyConversations error:", error);
     res.status(500).json({ message: "Server error" });
   }
 }
@@ -248,6 +249,7 @@ export async function getUnreadCount(
 
     res.json({ count });
   } catch (error) {
+    console.error("getUnreadCount error:", error);
     res.status(500).json({ message: "Server error" });
   }
 }
