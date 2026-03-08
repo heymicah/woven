@@ -6,19 +6,26 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
+  Pressable,
+  useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../../constants/Colors";
 import { itemsService } from "../../services/items.service";
-import { ItemCard } from "../../components/ItemCard";
 import { Item } from "../../types";
 
 export default function CategorySearchScreen() {
   const { category } = useLocalSearchParams<{ category: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  const { width: screenWidth } = useWindowDimensions();
+  const gap = 12;
+  const padding = 16;
+  const columnWidth = (screenWidth - padding * 2 - gap) / 2;
 
   const decodedCategory = decodeURIComponent(category || "");
   const [query, setQuery] = useState(decodedCategory);
@@ -103,28 +110,86 @@ export default function CategorySearchScreen() {
         )}
       </View>
 
-      {/* Search Results */}
+      {/* Search Results — Masonry Layout */}
       <ScrollView
         contentContainerStyle={{
           flexGrow: 1,
-          padding: 16,
-          paddingBottom: insets.bottom + 16,
+          padding,
+          paddingBottom: insets.bottom + 100,
         }}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         {isSearching ? (
           <View style={{ alignItems: "center", paddingTop: 40 }}>
             <ActivityIndicator size="large" color={Colors.accent} />
           </View>
         ) : results.length > 0 ? (
-          results.map((item) => (
-            <ItemCard
-              key={item._id}
-              item={item}
-              onPress={(i) => router.push(`/item/${i._id}`)}
-            />
-          ))
+          <View style={{ flexDirection: "row", gap }}>
+            <View style={{ flex: 1 }}>
+              {results.filter((_, i) => i % 2 === 0).map((item) => {
+                const hash = item._id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                const height = 180 + (hash % 140);
+                const sourceUri = item.imageUrls && item.imageUrls.length > 0
+                  ? item.imageUrls[0]
+                  : "https://via.placeholder.com/300x400?text=No+Image";
+                return (
+                  <Pressable
+                    key={item._id}
+                    onPress={() => router.push(`/item/${item._id}`)}
+                    style={{
+                      width: columnWidth,
+                      height,
+                      marginBottom: gap,
+                      borderRadius: 16,
+                      backgroundColor: "#C4DBC4",
+                      overflow: "hidden",
+                      borderWidth: 1,
+                      borderColor: Colors.border,
+                    }}
+                  >
+                    <Image
+                      source={{ uri: sourceUri }}
+                      style={{ width: "100%", height: "100%" }}
+                      resizeMode="cover"
+                    />
+                  </Pressable>
+                );
+              })}
+            </View>
+            <View style={{ flex: 1 }}>
+              {results.filter((_, i) => i % 2 === 1).map((item) => {
+                const hash = item._id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                const height = 180 + (hash % 140);
+                const sourceUri = item.imageUrls && item.imageUrls.length > 0
+                  ? item.imageUrls[0]
+                  : "https://via.placeholder.com/300x400?text=No+Image";
+                return (
+                  <Pressable
+                    key={item._id}
+                    onPress={() => router.push(`/item/${item._id}`)}
+                    style={{
+                      width: columnWidth,
+                      height,
+                      marginBottom: gap,
+                      borderRadius: 16,
+                      backgroundColor: "#C4DBC4",
+                      overflow: "hidden",
+                      borderWidth: 1,
+                      borderColor: Colors.border,
+                    }}
+                  >
+                    <Image
+                      source={{ uri: sourceUri }}
+                      style={{ width: "100%", height: "100%" }}
+                      resizeMode="cover"
+                    />
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
         ) : hasSearched ? (
           <View style={{ alignItems: "center", paddingTop: 60 }}>
             <Ionicons

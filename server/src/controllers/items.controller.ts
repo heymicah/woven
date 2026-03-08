@@ -18,9 +18,24 @@ export async function getItems(req: Request, res: Response): Promise<void> {
     if (size) filter.size = size;
     if (condition) filter.condition = condition;
     if (search) {
+      const term = (search as string).trim();
+      // Strip common plural endings to get stem, then match with optional plural suffix
+      let stem = term;
+      if (/ies$/i.test(term)) {
+        stem = term.replace(/ies$/i, "");
+        // matches: stem + "y", stem + "ies"
+      } else if (/es$/i.test(term)) {
+        stem = term.replace(/es$/i, "");
+        // matches: stem, stem + "e", stem + "es"
+      } else if (/s$/i.test(term)) {
+        stem = term.replace(/s$/i, "");
+        // matches: stem, stem + "s"
+      }
+      // Regex: stem followed by optional plural endings
+      const pattern = stem + "(?:y|ies|es|s|e)?";
       filter.$or = [
-        { title: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
+        { title: { $regex: pattern, $options: "i" } },
+        { description: { $regex: pattern, $options: "i" } },
       ];
     }
 
