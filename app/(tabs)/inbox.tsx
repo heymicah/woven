@@ -87,11 +87,18 @@ export default function InboxScreen() {
 
   return (
     <View className="flex-1" style={{ backgroundColor: Palette.cream }}>
+      {/* Header */}
+      <View style={{ paddingTop: 70, paddingBottom: 12, paddingHorizontal: 20, backgroundColor: Palette.cream }}>
+        <Text style={{ fontSize: 22, fontWeight: "700", color: Palette.dark, fontFamily: "Quicksand_700Bold" }}>
+          Inbox
+        </Text>
+      </View>
+
       <FlatList
         data={conversations}
         keyExtractor={(item) => item._id}
         contentContainerStyle={
-          conversations.length === 0 ? { flex: 1 } : { paddingVertical: 4 }
+          conversations.length === 0 ? { flex: 1 } : { paddingBottom: 100 }
         }
         onRefresh={handleRefresh}
         refreshing={refreshing}
