@@ -83,10 +83,11 @@ export default function ItemDetailScreen() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
-  const [carouselWidth, setCarouselWidth] = useState(0);
   const [fullscreenVisible, setFullscreenVisible] = useState(false);
   const [hasReviewed, setHasReviewed] = useState(false);
   const [sellerRating, setSellerRating] = useState<number | null>(null);
+  const [imageAspectRatios, setImageAspectRatios] = useState<Record<number, number>>({});
+  const [carouselWidth, setCarouselWidth] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
 
@@ -114,6 +115,12 @@ export default function ItemDetailScreen() {
             .then(res => setSellerRating(res.avgRating))
             .catch(() => { });
         }
+        // Get aspect ratios for all images
+        data.imageUrls?.forEach((uri: string, index: number) => {
+          Image.getSize(uri, (w, h) => {
+            if (w && h) setImageAspectRatios(prev => ({ ...prev, [index]: w / h }));
+          }, () => {});
+        });
       })
       .catch(() => setError("Could not load item"))
       .finally(() => setLoading(false));
@@ -335,34 +342,68 @@ export default function ItemDetailScreen() {
           className="relative mx-4 rounded-2xl overflow-hidden"
           onLayout={(e) => setCarouselWidth(e.nativeEvent.layout.width)}
         >
-          {images.length > 0 && carouselWidth > 0 ? (
-            <FlatList
-              ref={flatListRef}
-              data={images}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onViewableItemsChanged={onViewableItemsChanged}
-              viewabilityConfig={viewabilityConfig}
-              keyExtractor={(_, i) => i.toString()}
-              getItemLayout={(_, index) => ({
-                length: carouselWidth,
-                offset: carouselWidth * index,
-                index,
-              })}
-              renderItem={({ item: uri }) => (
-                <Pressable onPress={() => setFullscreenVisible(true)}>
-                  <View style={{ width: carouselWidth, aspectRatio: 3 / 4, backgroundColor: Palette.cream }}>
-                    <Image
-                      source={{ uri }}
-                      style={{ width: "100%", height: "100%" }}
-                      resizeMode="contain"
-                    />
-                  </View>
-                </Pressable>
-              )}
-            />
-          ) : (
+          {images.length > 0 && carouselWidth > 0 ? (() => {
+            // Use the smallest aspect ratio (tallest image) as the frame, clamped
+            const ratioValues = Object.values(imageAspectRatios);
+            const minRatio = ratioValues.length > 0 ? Math.min(...ratioValues) : 3 / 4;
+            const frameRatio = Math.max(3 / 5, Math.min(5 / 3, minRatio));
+            return (
+              <FlatList
+                ref={flatListRef}
+                data={images}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onViewableItemsChanged={onViewableItemsChanged}
+                viewabilityConfig={viewabilityConfig}
+                keyExtractor={(_, i) => i.toString()}
+                getItemLayout={(_, index) => ({
+                  length: carouselWidth,
+                  offset: carouselWidth * index,
+                  index,
+                })}
+                renderItem={({ item: uri, index }) => {
+                  const imgRatio = imageAspectRatios[index] || 3 / 4;
+                  const frameHeight = carouselWidth / frameRatio;
+                  // Calculate actual rendered size when "contained"
+                  let renderW, renderH;
+                  if (imgRatio > frameRatio) {
+                    // Image is wider than frame — width-limited
+                    renderW = carouselWidth;
+                    renderH = carouselWidth / imgRatio;
+                  } else {
+                    // Image is taller than frame — height-limited
+                    renderH = frameHeight;
+                    renderW = frameHeight * imgRatio;
+                  }
+                  return (
+                    <Pressable onPress={() => setFullscreenVisible(true)}>
+                      <View style={{
+                        width: carouselWidth,
+                        height: frameHeight,
+                        backgroundColor: Palette.cream,
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}>
+                        <View style={{
+                          width: renderW,
+                          height: renderH,
+                          borderRadius: 16,
+                          overflow: "hidden",
+                        }}>
+                          <Image
+                            source={{ uri }}
+                            style={{ width: "100%", height: "100%" }}
+                            resizeMode="cover"
+                          />
+                        </View>
+                      </View>
+                    </Pressable>
+                  );
+                }}
+              />
+            );
+          })() : (
             <View
               className="w-full bg-gray-200 items-center justify-center"
               style={{ aspectRatio: 3 / 4 }}
