@@ -5,7 +5,6 @@ import { Transaction } from "../models/Transaction";
 import mongoose from "mongoose";
 import { AuthRequest, ItemStatus, TransactionType } from "../types";
 
-const POST_REWARD = 1;
 const CLAIM_COST = 1;
 
 export async function getItems(req: Request, res: Response): Promise<void> {
@@ -80,19 +79,6 @@ export async function createItem(
     });
 
     console.log("[createItem] Item created:", item._id);
-
-    // Reward token for posting
-    await User.findByIdAndUpdate(req.userId, {
-      $inc: { tokenBalance: POST_REWARD },
-    });
-
-    // Record transaction
-    await Transaction.create({
-      userId: req.userId,
-      itemId: item._id,
-      type: TransactionType.POST_REWARD,
-      tokenAmount: POST_REWARD,
-    });
 
     res.status(201).json(item);
   } catch (error: any) {

@@ -8,28 +8,47 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Keyboard } from "react-native";
 import { Colors } from "../../constants/Colors";
 
-// Broad size dataset — structured for easy revision later
+// Size dataset organised by category type
 const SIZE_GROUPS = [
   {
-    label: "Clothing",
+    label: "Tops & Outerwear",
     sizes: ["XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL"],
   },
   {
-    label: "Numeric",
-    sizes: ["0", "2", "4", "6", "8", "10", "12", "14", "16"],
+    label: "Men's Pants & Jeans (W×L)",
+    sizes: [
+      "26×28", "26×30", "26×32",
+      "28×28", "28×30", "28×32", "28×34",
+      "30×28", "30×30", "30×32", "30×34",
+      "32×28", "32×30", "32×32", "32×34",
+      "34×28", "34×30", "34×32", "34×34",
+      "36×30", "36×32", "36×34",
+      "38×30", "38×32", "38×34",
+      "40×30", "40×32",
+    ],
   },
   {
-    label: "Shoes",
+    label: "Women's Pants & Jeans (Waist)",
+    sizes: ["23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36"],
+  },
+  {
+    label: "Dresses, Skirts & Shorts (Numeric)",
+    sizes: ["00", "0", "2", "4", "6", "8", "10", "12", "14", "16", "18", "20"],
+  },
+  {
+    label: "Shoes (US)",
     sizes: [
-      "5", "5.5", "6", "6.5", "7", "7.5", "8", "8.5",
-      "9", "9.5", "10", "10.5", "11", "11.5", "12", "13",
+      "4", "4.5", "5", "5.5", "6", "6.5", "7", "7.5",
+      "8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5",
+      "12", "12.5", "13", "14",
     ],
   },
   {
     label: "Universal",
-    sizes: ["One Size"],
+    sizes: ["One Size", "S/M", "M/L"],
   },
 ];
 
@@ -52,7 +71,7 @@ export default function SizeSelector({ selected, onSelect }: SizeSelectorProps) 
 
       {/* Collapsed row — shows current selection */}
       <Pressable
-        onPress={() => setIsOpen(true)}
+        onPress={() => { Keyboard.dismiss(); setIsOpen(true); }}
         style={styles.selector}
         accessibilityRole="button"
         accessibilityLabel={`Select size${selected ? `, current: ${selected}` : ""}`}
