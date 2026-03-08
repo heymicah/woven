@@ -99,9 +99,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondary,
   },
   chipInactive: {
-    backgroundColor: Colors.surface,
+    backgroundColor: "#FFF1DA",
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: "#E5E7EB",
   },
   chipText: {
     fontSize: 13,

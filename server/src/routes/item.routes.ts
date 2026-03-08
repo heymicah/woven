@@ -4,6 +4,7 @@ import {
   getItem,
   createItem,
   claimItem,
+  updateItem,
   deleteItem,
   getMyItems,
   getClaimedItems,
@@ -18,6 +19,7 @@ router.get("/claimed", authMiddleware, getClaimedItems);
 router.get("/:id", getItem);
 router.post("/", authMiddleware, createItem);
 router.post("/:id/claim", authMiddleware, claimItem);
+router.put("/:id", authMiddleware, updateItem);
 router.delete("/:id", authMiddleware, deleteItem);
 
 export default router;

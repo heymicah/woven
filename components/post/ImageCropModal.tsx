@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   View,
   Image,
@@ -8,29 +8,126 @@ import {
   StyleSheet,
   Dimensions,
   ActivityIndicator,
+  PanResponder,
 } from "react-native";
-import {
-  GestureHandlerRootView,
-  PinchGestureHandler,
-  PanGestureHandler,
-  State,
-  PinchGestureHandlerGestureEvent,
-  PanGestureHandlerGestureEvent,
-  PinchGestureHandlerEventPayload,
-  PanGestureHandlerEventPayload,
-  HandlerStateChangeEvent,
-} from "react-native-gesture-handler";
 import * as ImageManipulator from "expo-image-manipulator";
 import { Colors } from "../../constants/Colors";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-const CROP_SIZE = SCREEN_WIDTH - 48; // square crop area with padding
+const CONTAINER_HEIGHT = SCREEN_HEIGHT - 180;
+const PADDING = 24;
+const MIN_SIZE = 60;
+const HANDLE_HIT = 32; // touch target size for corner handles
+
+interface CropRect { x: number; y: number; w: number; h: number }
 
 interface ImageCropModalProps {
   visible: boolean;
   imageUri: string;
   onCancel: () => void;
   onDone: (croppedUri: string) => void;
+}
+
+// Calculates where the image actually renders inside the container (letterboxed)
+function getImageLayout(imgW: number, imgH: number) {
+  if (!imgW || !imgH) return { x: 0, y: 0, w: SCREEN_WIDTH, h: CONTAINER_HEIGHT };
+  const containerAR = SCREEN_WIDTH / CONTAINER_HEIGHT;
+  const imageAR = imgW / imgH;
+  let w: number, h: number;
+  if (imageAR > containerAR) {
+    w = SCREEN_WIDTH;
+    h = SCREEN_WIDTH / imageAR;
+  } else {
+    h = CONTAINER_HEIGHT;
+    w = CONTAINER_HEIGHT * imageAR;
+  }
+  return {
+    x: (SCREEN_WIDTH - w) / 2,
+    y: (CONTAINER_HEIGHT - h) / 2,
+    w,
+    h,
+  };
+}
+
+type Corner = "tl" | "tr" | "bl" | "br";
+
+function CornerHandle({
+  corner,
+  cropRect,
+  imgLayout,
+  onChange,
+}: {
+  corner: Corner;
+  cropRect: CropRect;
+  imgLayout: { x: number; y: number; w: number; h: number };
+  onChange: (rect: CropRect) => void;
+}) {
+  const last = useRef({ x: cropRect.x, y: cropRect.y, w: cropRect.w, h: cropRect.h });
+  const cropRectRef = useRef(cropRect);
+  const onChangeRef = useRef(onChange);
+  const imgLayoutRef = useRef(imgLayout);
+  cropRectRef.current = cropRect;
+  onChangeRef.current = onChange;
+  imgLayoutRef.current = imgLayout;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        last.current = { ...cropRectRef.current };
+      },
+      onPanResponderMove: (_, gs) => {
+        const { dx, dy } = gs;
+        let { x, y, w, h } = last.current;
+        const il = imgLayoutRef.current;
+
+        const imgRight = il.x + il.w;
+        const imgBottom = il.y + il.h;
+
+        if (corner === "tl") {
+          const newX = Math.max(il.x, Math.min(x + dx, x + w - MIN_SIZE));
+          const newY = Math.max(il.y, Math.min(y + dy, y + h - MIN_SIZE));
+          onChangeRef.current({ x: newX, y: newY, w: w + (x - newX), h: h + (y - newY) });
+        } else if (corner === "tr") {
+          const newW = Math.max(MIN_SIZE, Math.min(w + dx, imgRight - x));
+          const newY = Math.max(il.y, Math.min(y + dy, y + h - MIN_SIZE));
+          onChangeRef.current({ x, y: newY, w: newW, h: h + (y - newY) });
+        } else if (corner === "bl") {
+          const newX = Math.max(il.x, Math.min(x + dx, x + w - MIN_SIZE));
+          const newH = Math.max(MIN_SIZE, Math.min(h + dy, imgBottom - y));
+          onChangeRef.current({ x: newX, y, w: w + (x - newX), h: newH });
+        } else {
+          const newW = Math.max(MIN_SIZE, Math.min(w + dx, imgRight - x));
+          const newH = Math.max(MIN_SIZE, Math.min(h + dy, imgBottom - y));
+          onChangeRef.current({ x, y, w: newW, h: newH });
+        }
+      },
+      onPanResponderRelease: () => {
+        last.current = { ...cropRectRef.current };
+      },
+    })
+  ).current;
+
+  const posStyle = {
+    tl: { top: -HANDLE_HIT / 2, left: -HANDLE_HIT / 2 },
+    tr: { top: -HANDLE_HIT / 2, right: -HANDLE_HIT / 2 },
+    bl: { bottom: -HANDLE_HIT / 2, left: -HANDLE_HIT / 2 },
+    br: { bottom: -HANDLE_HIT / 2, right: -HANDLE_HIT / 2 },
+  }[corner];
+
+  const borderStyle = {
+    tl: { borderTopWidth: 3, borderLeftWidth: 3 },
+    tr: { borderTopWidth: 3, borderRightWidth: 3 },
+    bl: { borderBottomWidth: 3, borderLeftWidth: 3 },
+    br: { borderBottomWidth: 3, borderRightWidth: 3 },
+  }[corner];
+
+  return (
+    <View
+      {...panResponder.panHandlers}
+      style={[styles.handle, posStyle, borderStyle]}
+    />
+  );
 }
 
 export default function ImageCropModal({
@@ -40,126 +137,64 @@ export default function ImageCropModal({
   onDone,
 }: ImageCropModalProps) {
   const [loading, setLoading] = useState(false);
-
-  // Track image position/scale for the crop
-  const [scale, setScale] = useState(1);
-  const [translateX, setTranslateX] = useState(0);
-  const [translateY, setTranslateY] = useState(0);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [cropRect, setCropRect] = useState<CropRect>({ x: PADDING, y: 0, w: SCREEN_WIDTH - PADDING * 2, h: SCREEN_WIDTH - PADDING * 2 });
 
-  // Refs for gesture state tracking
-  const baseScale = useRef(1);
-  const baseTranslateX = useRef(0);
-  const baseTranslateY = useRef(0);
+  const imgLayout = getImageLayout(imageSize.width, imageSize.height);
 
-  // Load image dimensions when modal opens
   React.useEffect(() => {
     if (visible && imageUri) {
-      setScale(1);
-      setTranslateX(0);
-      setTranslateY(0);
-      baseScale.current = 1;
-      baseTranslateX.current = 0;
-      baseTranslateY.current = 0;
       Image.getSize(imageUri, (w, h) => {
         setImageSize({ width: w, height: h });
+        const layout = getImageLayout(w, h);
+        // Initial crop = full image area
+        setCropRect({ x: layout.x, y: layout.y, w: layout.w, h: layout.h });
       });
     }
   }, [visible, imageUri]);
 
-  function onPinchGestureEvent(event: PinchGestureHandlerGestureEvent) {
-    const newScale = Math.max(0.5, Math.min(baseScale.current * event.nativeEvent.scale, 4));
-    setScale(newScale);
-  }
-
-  function onPinchHandlerStateChange(event: HandlerStateChangeEvent<PinchGestureHandlerEventPayload>) {
-    if (event.nativeEvent.oldState === State.ACTIVE) {
-      baseScale.current = scale;
-    }
-  }
-
-  function onPanGestureEvent(event: PanGestureHandlerGestureEvent) {
-    setTranslateX(baseTranslateX.current + event.nativeEvent.translationX);
-    setTranslateY(baseTranslateY.current + event.nativeEvent.translationY);
-  }
-
-  function onPanHandlerStateChange(event: HandlerStateChangeEvent<PanGestureHandlerEventPayload>) {
-    if (event.nativeEvent.oldState === State.ACTIVE) {
-      baseTranslateX.current = translateX;
-      baseTranslateY.current = translateY;
-    }
-  }
+  const handleCropChange = useCallback((rect: CropRect) => {
+    setCropRect(rect);
+  }, []);
 
   async function handleCrop() {
-    if (imageSize.width === 0 || imageSize.height === 0) return;
+    if (!imageSize.width || !imageSize.height) return;
     setLoading(true);
     try {
-      // Calculate the displayed image size (fit to screen width)
-      const aspectRatio = imageSize.width / imageSize.height;
-      let displayW: number, displayH: number;
+      // Map crop window (screen coords) → original image coords
+      const scaleX = imageSize.width / imgLayout.w;
+      const scaleY = imageSize.height / imgLayout.h;
 
-      if (aspectRatio > 1) {
-        displayW = SCREEN_WIDTH * scale;
-        displayH = (SCREEN_WIDTH / aspectRatio) * scale;
-      } else {
-        displayH = SCREEN_WIDTH * scale;
-        displayW = SCREEN_WIDTH * aspectRatio * scale;
-      }
+      const relX = cropRect.x - imgLayout.x;
+      const relY = cropRect.y - imgLayout.y;
 
-      // Crop region center is the center of the crop overlay
-      // Translate from display coords to original image coords
-      const scaleToOriginalX = imageSize.width / displayW;
-      const scaleToOriginalY = imageSize.height / displayH;
-
-      // The crop square center in display space is at (SCREEN_WIDTH/2, centered vertically in the crop zone)
-      // The image is offset by translateX/Y from its default centered position
-      const cropCenterDisplayX = SCREEN_WIDTH / 2 - translateX;
-      const cropCenterDisplayY = SCREEN_WIDTH / 2 - translateY;
-
-      const originX = Math.max(0, (cropCenterDisplayX - CROP_SIZE / 2) * scaleToOriginalX);
-      const originY = Math.max(0, (cropCenterDisplayY - CROP_SIZE / 2) * scaleToOriginalY);
-      const cropW = Math.min(CROP_SIZE * scaleToOriginalX, imageSize.width - originX);
-      const cropH = Math.min(CROP_SIZE * scaleToOriginalY, imageSize.height - originY);
+      const originX = Math.max(0, Math.round(relX * scaleX));
+      const originY = Math.max(0, Math.round(relY * scaleY));
+      const cropW = Math.min(Math.round(cropRect.w * scaleX), imageSize.width - originX);
+      const cropH = Math.min(Math.round(cropRect.h * scaleY), imageSize.height - originY);
 
       const result = await ImageManipulator.manipulateAsync(
         imageUri,
-        [
-          {
-            crop: {
-              originX: Math.round(originX),
-              originY: Math.round(originY),
-              width: Math.round(cropW),
-              height: Math.round(cropH),
-            },
-          },
-        ],
+        [{ crop: { originX, originY, width: cropW, height: cropH } }],
         { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
       );
-
       onDone(result.uri);
-    } catch (error) {
-      console.warn("Crop failed:", error);
-      // Fall back to returning the original
+    } catch {
       onDone(imageUri);
     } finally {
       setLoading(false);
     }
   }
 
-  // Calculate display dimensions for the image
-  const aspectRatio = imageSize.width / imageSize.height || 1;
-  let imgDisplayW: number, imgDisplayH: number;
-  if (aspectRatio > 1) {
-    imgDisplayW = SCREEN_WIDTH;
-    imgDisplayH = SCREEN_WIDTH / aspectRatio;
-  } else {
-    imgDisplayH = SCREEN_WIDTH;
-    imgDisplayW = SCREEN_WIDTH * aspectRatio;
-  }
+  // Overlay rects surrounding the crop window
+  const oy = cropRect.y;
+  const ox = cropRect.x;
+  const ow = cropRect.w;
+  const oh = cropRect.h;
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen">
-      <GestureHandlerRootView style={styles.modalContainer}>
+      <View style={styles.modalContainer}>
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={onCancel} style={styles.headerButton}>
@@ -179,53 +214,45 @@ export default function ImageCropModal({
           </Pressable>
         </View>
 
-        {/* Crop area */}
+        {/* Image + crop overlay */}
         <View style={styles.cropArea}>
-          <PanGestureHandler
-            onGestureEvent={onPanGestureEvent}
-            onHandlerStateChange={onPanHandlerStateChange}
-          >
-            <PinchGestureHandler
-              onGestureEvent={onPinchGestureEvent}
-              onHandlerStateChange={onPinchHandlerStateChange}
-            >
-              <View style={styles.imageContainer}>
-                {imageUri ? (
-                  <Image
-                    source={{ uri: imageUri }}
-                    style={{
-                      width: imgDisplayW,
-                      height: imgDisplayH,
-                      transform: [
-                        { translateX },
-                        { translateY },
-                        { scale },
-                      ],
-                    }}
-                    resizeMode="contain"
-                  />
-                ) : null}
-              </View>
-            </PinchGestureHandler>
-          </PanGestureHandler>
+          {imageUri ? (
+            <Image
+              source={{ uri: imageUri }}
+              style={styles.image}
+              resizeMode="contain"
+            />
+          ) : null}
 
-          {/* Crop overlay — darkens everything outside the crop square */}
-          <View style={styles.overlayContainer} pointerEvents="none">
-            {/* Top */}
-            <View style={[styles.overlayDark, { height: (SCREEN_HEIGHT - CROP_SIZE) / 2 - 80 }]} />
-            {/* Middle row */}
-            <View style={{ flexDirection: "row", height: CROP_SIZE }}>
-              <View style={[styles.overlayDark, { width: 24 }]} />
-              <View style={styles.cropWindow} />
-              <View style={[styles.overlayDark, { width: 24 }]} />
-            </View>
-            {/* Bottom */}
-            <View style={[styles.overlayDark, { flex: 1 }]} />
+          {/* Dark overlay — 4 surrounding rects */}
+          <View pointerEvents="none" style={[styles.overlayRect, { top: 0, left: 0, right: 0, height: oy }]} />
+          <View pointerEvents="none" style={[styles.overlayRect, { top: oy, left: 0, width: ox, height: oh }]} />
+          <View pointerEvents="none" style={[styles.overlayRect, { top: oy, left: ox + ow, right: 0, height: oh }]} />
+          <View pointerEvents="none" style={[styles.overlayRect, { top: oy + oh, left: 0, right: 0, bottom: 0 }]} />
+
+          {/* Crop window border + corner handles */}
+          <View
+            pointerEvents="box-none"
+            style={[
+              styles.cropWindow,
+              { top: oy, left: ox, width: ow, height: oh },
+            ]}
+          >
+            {/* Rule-of-thirds grid lines */}
+            <View pointerEvents="none" style={[styles.gridLine, styles.gridV1]} />
+            <View pointerEvents="none" style={[styles.gridLine, styles.gridV2]} />
+            <View pointerEvents="none" style={[styles.gridLine, styles.gridH1]} />
+            <View pointerEvents="none" style={[styles.gridLine, styles.gridH2]} />
+
+            <CornerHandle corner="tl" cropRect={cropRect} imgLayout={imgLayout} onChange={handleCropChange} />
+            <CornerHandle corner="tr" cropRect={cropRect} imgLayout={imgLayout} onChange={handleCropChange} />
+            <CornerHandle corner="bl" cropRect={cropRect} imgLayout={imgLayout} onChange={handleCropChange} />
+            <CornerHandle corner="br" cropRect={cropRect} imgLayout={imgLayout} onChange={handleCropChange} />
           </View>
         </View>
 
-        <Text style={styles.hint}>Pinch to zoom, drag to reposition</Text>
-      </GestureHandlerRootView>
+        <Text style={styles.hint}>Drag corners to crop</Text>
+      </View>
     </Modal>
   );
 }
@@ -274,29 +301,35 @@ const styles = StyleSheet.create({
   },
   cropArea: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  imageContainer: {
     width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT - 180,
-    justifyContent: "center",
-    alignItems: "center",
-    overflow: "hidden",
+    height: CONTAINER_HEIGHT,
   },
-  overlayContainer: {
-    ...StyleSheet.absoluteFillObject,
+  image: {
+    width: SCREEN_WIDTH,
+    height: CONTAINER_HEIGHT,
   },
-  overlayDark: {
-    backgroundColor: "rgba(0, 0, 0, 0.55)",
+  overlayRect: {
+    position: "absolute",
+    backgroundColor: "rgba(0,0,0,0.55)",
   },
   cropWindow: {
-    width: CROP_SIZE,
-    height: CROP_SIZE,
+    position: "absolute",
     borderWidth: 1.5,
-    borderColor: "rgba(255, 255, 255, 0.6)",
-    borderRadius: 4,
+    borderColor: "rgba(255,255,255,0.8)",
+  },
+  gridLine: {
+    position: "absolute",
+    backgroundColor: "rgba(255,255,255,0.2)",
+  },
+  gridV1: { left: "33.3%", top: 0, bottom: 0, width: StyleSheet.hairlineWidth },
+  gridV2: { left: "66.6%", top: 0, bottom: 0, width: StyleSheet.hairlineWidth },
+  gridH1: { top: "33.3%", left: 0, right: 0, height: StyleSheet.hairlineWidth },
+  gridH2: { top: "66.6%", left: 0, right: 0, height: StyleSheet.hairlineWidth },
+  handle: {
+    position: "absolute",
+    width: HANDLE_HIT,
+    height: HANDLE_HIT,
+    borderColor: "#FFFFFF",
   },
   hint: {
     textAlign: "center",
