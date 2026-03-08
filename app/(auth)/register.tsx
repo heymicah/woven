@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Keyboard,
   TouchableWithoutFeedback,
+  Image,
 } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -39,9 +40,11 @@ export default function RegisterScreen() {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
     <View style={styles.screen}>
       <View style={styles.form}>
-        <Text className="text-4xl font-bold text-center text-[#411E12] mb-2">
-          Woven
-        </Text>
+        <Image
+          source={require("../../assets/woven word.png")}
+          style={{ width: 300, height: 120, alignSelf: "center", marginBottom: 8 }}
+          resizeMode="contain"
+        />
         <Text className="text-base text-center text-gray-500 mb-10">
           Join the community
         </Text>

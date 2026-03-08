@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Keyboard,
   TouchableWithoutFeedback,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "../../hooks/useAuth";
@@ -38,9 +39,11 @@ export default function LoginScreen() {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
     <View style={styles.screen}>
       <View style={styles.form}>
-        <Text className="text-4xl font-bold text-center text-[#411E12] mb-2">
-          Woven
-        </Text>
+        <Image
+          source={require("../../assets/woven word.png")}
+          style={{ width: 300, height: 120, alignSelf: "center", marginBottom: -16 }}
+          resizeMode="contain"
+        />
         <Text className="text-base text-center text-gray-500 mb-10">
           Community clothing upcycling
         </Text>
