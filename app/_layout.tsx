@@ -1,6 +1,6 @@
 import "../global.css";
-import React from "react";
-import { Stack, Redirect } from "expo-router";
+import React, { useEffect, useRef } from "react";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { useFonts } from "@expo-google-fonts/quicksand";
 import {
   Quicksand_300Light,
@@ -14,18 +14,38 @@ import { SocketProvider } from "../context/SocketContext";
 import { useAuth } from "../hooks/useAuth";
 import { LoadingScreen } from "../components/LoadingScreen";
 
-function RootNavigator() {
+function useProtectedRoute() {
   const { isAuthenticated, isLoading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+  const prevAuth = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    // Only act when authentication state actually changes
+    if (prevAuth.current === isAuthenticated) return;
+    prevAuth.current = isAuthenticated;
+
+    const inAuthGroup = segments[0] === "(auth)";
+
+    if (!isAuthenticated) {
+      router.replace("/(auth)/login");
+    } else if (inAuthGroup || segments.length === 0) {
+      router.replace("/(tabs)");
+    }
+  }, [isAuthenticated, isLoading]);
+}
+
+function RootLayoutNav() {
+  const { isLoading } = useAuth();
+  useProtectedRoute();
 
   if (isLoading) {
     return <LoadingScreen />;
   }
 
-  if (!isAuthenticated) {
-    return <Redirect href="/(auth)/login" />;
-  }
-
-  return null;
+  return <Stack screenOptions={{ headerShown: false }} />;
 }
 
 export default function RootLayout() {
@@ -44,8 +64,7 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <SocketProvider>
-        <RootNavigator />
-        <Stack screenOptions={{ headerShown: false }} />
+        <RootLayoutNav />
       </SocketProvider>
     </AuthProvider>
   );

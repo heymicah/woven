@@ -10,13 +10,16 @@ import {
   RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../../constants/Colors";
 import { Item } from "../../types";
 import { itemsService } from "../../services/items.service";
 import { MasonryImage } from "../../components/MasonryImage";
+import { fetchAspectRatiosBatch } from "../../utils/image";
 
 export default function ExploreScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [items, setItems] = useState<Item[]>([]);
   const [aspectRatios, setAspectRatios] = useState<{ [key: string]: number }>({});
   const [loading, setLoading] = useState(true);
@@ -28,6 +31,11 @@ export default function ExploreScreen() {
       setError(null);
       const data = await itemsService.getAll();
       setItems(data);
+
+      // Batch fetch aspect ratios to prevent glitching
+      const uris = data.map(item => item.imageUrls?.[0]).filter((u): u is string => !!u);
+      const ratiosMap = await fetchAspectRatiosBatch(uris);
+      setAspectRatios(prev => ({ ...prev, ...ratiosMap }));
     } catch (err: any) {
       console.error("[Explore] Failed to fetch items:", err.message);
       setError("Couldn't load items. Pull down to retry.");
@@ -40,26 +48,6 @@ export default function ExploreScreen() {
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
-
-  useEffect(() => {
-    // Pre-fetch aspect ratios for greedy balancing
-    items.forEach((item) => {
-      if (aspectRatios[item._id]) return;
-      const uri = item.imageUrls?.[0];
-      if (!uri) return;
-
-      Image.getSize(
-        uri,
-        (width, height) => {
-          setAspectRatios((prev) => ({ ...prev, [item._id]: width / height }));
-        },
-        () => {
-          // Fallback to square if error
-          setAspectRatios((prev) => ({ ...prev, [item._id]: 1 }));
-        }
-      );
-    });
-  }, [items]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -99,6 +87,7 @@ export default function ExploreScreen() {
       <MasonryImage
         key={itemData._id}
         uri={photoUri}
+        aspectRatio={aspectRatios[itemData._id]}
         columnWidth={columnWidth}
         onPress={() => router.push(`/item/${itemData._id}`)}
       />
@@ -108,7 +97,7 @@ export default function ExploreScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView
-        contentContainerStyle={{ padding, paddingTop: 90, paddingBottom: 100 }}
+        contentContainerStyle={{ padding, paddingTop: insets.top + 16, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -120,13 +109,13 @@ export default function ExploreScreen() {
           </View>
         ) : error ? (
           <View style={{ alignItems: "center", paddingTop: 60 }}>
-            <Text style={{ color: Colors.textSecondary, fontSize: 16, textAlign: "center" }}>
+            <Text style={{ color: Colors.textSecondary, fontSize: 16, textAlign: "center", fontFamily: "Quicksand_400Regular" }}>
               {error}
             </Text>
           </View>
         ) : items.length === 0 ? (
           <View style={{ alignItems: "center", paddingTop: 60 }}>
-            <Text style={{ color: Colors.textSecondary, fontSize: 16 }}>No items found</Text>
+            <Text style={{ color: Colors.textSecondary, fontSize: 16, fontFamily: "Quicksand_400Regular" }}>No items found</Text>
           </View>
         ) : (
           <View style={{ flexDirection: "row", gap }}>

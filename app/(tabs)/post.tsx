@@ -9,7 +9,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Pressable,
 } from "react-native";
+import { ThemedText } from "../../components/ThemedText";
+import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Colors } from "../../constants/Colors";
@@ -158,7 +161,8 @@ export default function PostScreen() {
 
   // ── Load existing item for edit ─────────────────────────────
   useEffect(() => {
-    if (isEditMode) {
+    if (id) {
+      setInitialLoading(true);
       itemsService
         .getById(id)
         .then((item) => {
@@ -176,8 +180,18 @@ export default function PostScreen() {
           router.back();
         })
         .finally(() => setInitialLoading(false));
+    } else {
+      // Clear form for "New Post"
+      setPhotos([]);
+      setTitle("");
+      setCategory("");
+      setIntendedFit("");
+      setSize("");
+      setCondition("");
+      setDescription("");
+      setInitialLoading(false);
     }
-  }, [id, isEditMode]);
+  }, [id, router]);
 
   // ── Submit ──────────────────────────────────────────────────
   async function handleSubmit() {
@@ -260,7 +274,32 @@ export default function PostScreen() {
           ) : (
             <>
               {/* Header */}
-              <Text style={styles.heading}>{isEditMode ? "Edit Post" : "New Post"}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}>
+                {isEditMode && (
+                  <Pressable
+                    onPress={() => router.back()}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 20,
+                      backgroundColor: "#FFF1DA",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 12,
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 2,
+                      elevation: 2,
+                    }}
+                  >
+                    <Ionicons name="arrow-back" size={24} color={Colors.text} />
+                  </Pressable>
+                )}
+                <ThemedText variant="bold" style={[styles.heading, { marginBottom: 0 }]}>
+                  {isEditMode ? "Edit Post" : "New Post"}
+                </ThemedText>
+              </View>
 
               {/* 1. Photos */}
               <PhotoStrip
@@ -274,7 +313,7 @@ export default function PostScreen() {
 
               {/* 2. Title */}
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Title<Text style={{ color: Colors.error }}> *</Text></Text>
+                <ThemedText variant="semibold" style={styles.fieldLabel}>Title<ThemedText style={{ color: Colors.error }}> *</ThemedText></ThemedText>
                 <TextInput
                   style={styles.textInput}
                   placeholder="Vintage denim jacket"
@@ -319,10 +358,10 @@ export default function PostScreen() {
 
               {/* 7. Description (optional) */}
               <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, styles.optionalLabel]}>
+                <ThemedText variant="semibold" style={[styles.fieldLabel, styles.optionalLabel]}>
                   Description{" "}
-                  <Text style={styles.optionalHint}>(optional)</Text>
-                </Text>
+                  <ThemedText style={styles.optionalHint}>(optional)</ThemedText>
+                </ThemedText>
                 <TextInput
                   style={[styles.textInput, styles.textArea]}
                   placeholder="Share details about fit, brand, material, wear…"
@@ -348,6 +387,7 @@ export default function PostScreen() {
           disabled={!isFormValid}
           loading={isSubmitting}
           onPress={handleSubmit}
+          label={isEditMode ? "Update Item" : "Post Item"}
         />
 
         {/* Crop modal */}
@@ -378,29 +418,23 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 22,
-    fontWeight: "700",
     color: Colors.text,
     marginBottom: 20,
-    fontFamily: "Quicksand_700Bold",
   },
   fieldGroup: {
     marginBottom: 16,
   },
   fieldLabel: {
     fontSize: 13,
-    fontWeight: "600",
     color: Colors.text,
     marginBottom: 8,
-    fontFamily: "Quicksand_600SemiBold",
   },
   optionalLabel: {
     marginBottom: 8,
   },
   optionalHint: {
-    fontWeight: "400",
     color: Colors.textSecondary,
     fontSize: 12,
-    fontFamily: "Quicksand_400Regular",
   },
   textInput: {
     backgroundColor: "#FFF1DA",

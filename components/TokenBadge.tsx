@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View } from "react-native";
+import { ThemedText } from "./ThemedText";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/Colors";
 
@@ -13,9 +14,8 @@ export function TokenBadge({ balance, size = "sm" }: TokenBadgeProps) {
 
   return (
     <View
-      className={`flex-row items-center bg-amber-50 rounded-full ${
-        isLarge ? "px-4 py-2" : "px-3 py-1"
-      }`}
+      className={`flex-row items-center bg-amber-50 rounded-full ${isLarge ? "px-4 py-2" : "px-3 py-1"
+        }`}
     >
       <Ionicons
         name="star"
@@ -23,9 +23,8 @@ export function TokenBadge({ balance, size = "sm" }: TokenBadgeProps) {
         color={Colors.accent}
       />
       <Text
-        className={`font-bold text-amber-600 ml-1 ${
-          isLarge ? "text-xl" : "text-sm"
-        }`}
+        className={`font-bold text-amber-600 ml-1 ${isLarge ? "text-xl" : "text-sm"
+          }`}
       >
         {balance}
       </Text>

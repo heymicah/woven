@@ -14,9 +14,11 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Colors } from "../../constants/Colors";
 import { itemsService } from "../../services/items.service";
 import { userService } from "../../services/user.service";
+import { reviewsService } from "../../services/reviews.service";
 import { Item, ItemStatus, User } from "../../types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MasonryImage } from "../../components/MasonryImage";
+import { fetchAspectRatiosBatch } from "../../utils/image";
 
 type ProfileTab = "current" | "past";
 
@@ -35,21 +37,29 @@ export default function PublicProfileScreen() {
   const [activeTab, setActiveTab] = useState<ProfileTab>("current");
   const [items, setItems] = useState<Item[]>([]);
   const [aspectRatios, setAspectRatios] = useState<{ [key: string]: number }>({});
+  const [avgRating, setAvgRating] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!id) return;
     try {
-      const [userData, userItems] = await Promise.all([
+      const [userData, userItems, reviewsData] = await Promise.all([
         userService.getById(id),
         itemsService.getAll({
           userId: id,
           status: activeTab === "current" ? ItemStatus.AVAILABLE : ItemStatus.COMPLETED
         }),
+        reviewsService.getForUser(id),
       ]);
       setUser(userData);
       setItems(userItems);
+      setAvgRating(reviewsData.avgRating);
+
+      // Batch fetch aspect ratios to prevent glitching
+      const uris = userItems.map(i => i.imageUrls?.[0]).filter((u): u is string => !!u);
+      const ratiosMap = await fetchAspectRatiosBatch(uris);
+      setAspectRatios(prev => ({ ...prev, ...ratiosMap }));
     } catch (error) {
       console.error("Failed to fetch public profile data:", error);
     }
@@ -59,26 +69,6 @@ export default function PublicProfileScreen() {
     setLoading(true);
     fetchData().finally(() => setLoading(false));
   }, [id, activeTab]);
-
-  useEffect(() => {
-    // Pre-fetch aspect ratios for greedy balancing
-    items.forEach((item) => {
-      if (aspectRatios[item._id]) return;
-      const uri = item.imageUrls?.[0];
-      if (!uri) return;
-
-      Image.getSize(
-        uri,
-        (width, height) => {
-          setAspectRatios((prev) => ({ ...prev, [item._id]: width / height }));
-        },
-        () => {
-          // Fallback to square if error
-          setAspectRatios((prev) => ({ ...prev, [item._id]: 1 }));
-        }
-      );
-    });
-  }, [items]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -107,6 +97,7 @@ export default function PublicProfileScreen() {
       <MasonryImage
         key={item._id}
         uri={item.imageUrls?.[0] || "https://via.placeholder.com/300x400?text=No+Image"}
+        aspectRatio={aspectRatios[item._id]}
         columnWidth={columnWidth}
         onPress={() => router.push(`/item/${item._id}`)}
       />
@@ -214,8 +205,7 @@ export default function PublicProfileScreen() {
               style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}
             >
               {[1, 2, 3, 4, 5].map((n) => {
-                const rating = 5.0; // Placeholder for now
-                const fill = Math.min(1, Math.max(0, rating - (n - 1)));
+                const fill = Math.min(1, Math.max(0, avgRating - (n - 1)));
                 return (
                   <View key={n} style={{ width: 15, height: 15, marginRight: 1 }}>
                     <Ionicons
@@ -234,7 +224,9 @@ export default function PublicProfileScreen() {
                   </View>
                 );
               })}
-              <Text style={{ fontSize: 14, fontWeight: "600", color: Colors.text, marginLeft: 5 }}>5.0</Text>
+              <Text style={{ fontSize: 14, fontWeight: "600", color: Colors.text, marginLeft: 5 }}>
+                {avgRating.toFixed(1)}
+              </Text>
               <Ionicons
                 name="chevron-forward"
                 size={14}

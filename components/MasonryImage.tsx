@@ -6,19 +6,34 @@ interface MasonryImageProps {
     uri: string;
     onPress: () => void;
     columnWidth: number;
+    aspectRatio?: number;
 }
 
-export function MasonryImage({ uri, onPress, columnWidth }: MasonryImageProps) {
-    const [aspectRatio, setAspectRatio] = useState(1); // Default to square
-    const [loading, setLoading] = useState(true);
+const ratioCache: { [key: string]: number } = {};
+
+export function MasonryImage({ uri, onPress, columnWidth, aspectRatio: initialRatio }: MasonryImageProps) {
+    const [aspectRatio, setAspectRatio] = useState(initialRatio || ratioCache[uri] || 1); // Prefer initial, then cache, then square
+    const [loading, setLoading] = useState(!initialRatio && !ratioCache[uri]);
 
     useEffect(() => {
-        if (!uri) return;
+        if (!uri || ratioCache[uri]) return;
 
         Image.getSize(
             uri,
             (width, height) => {
-                setAspectRatio(width / height);
+                const rawRatio = width / height;
+                let binnedRatio = 1;
+
+                if (rawRatio < 0.85) {
+                    binnedRatio = 0.75; // 3:4 Portrait
+                } else if (rawRatio > 1.15) {
+                    binnedRatio = 1.33; // 4:3 Landscape
+                } else {
+                    binnedRatio = 1; // Square
+                }
+
+                ratioCache[uri] = binnedRatio;
+                setAspectRatio(binnedRatio);
                 setLoading(false);
             },
             (error) => {
@@ -29,34 +44,43 @@ export function MasonryImage({ uri, onPress, columnWidth }: MasonryImageProps) {
     }, [uri]);
 
     return (
-        <Pressable
-            onPress={onPress}
+        <View
             style={{
                 width: "100%",
-                aspectRatio,
                 marginBottom: 12,
-                borderRadius: 16,
-                backgroundColor: "#C4DBC4",
-                overflow: "hidden",
-                borderWidth: 1,
-                borderColor: Colors.border || "#e5e7eb",
-                justifyContent: "center",
-                alignItems: "center",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.15,
+                shadowRadius: 8,
+                elevation: 5,
             }}
         >
-            <Image
-                source={{ uri }}
+            <Pressable
+                onPress={onPress}
                 style={{
                     width: "100%",
-                    height: "100%",
+                    aspectRatio,
+                    borderRadius: 16,
+                    backgroundColor: "#C4DBC4",
+                    overflow: "hidden",
+                    justifyContent: "center",
+                    alignItems: "center",
                 }}
-                resizeMode="cover"
-            />
-            {loading && (
-                <View style={{ position: "absolute" }}>
-                    <ActivityIndicator color={Colors.primary} />
-                </View>
-            )}
-        </Pressable>
+            >
+                <Image
+                    source={{ uri }}
+                    style={{
+                        width: "100%",
+                        height: "100%",
+                    }}
+                    resizeMode="cover"
+                />
+                {loading && (
+                    <View style={{ position: "absolute" }}>
+                        <ActivityIndicator color={Colors.primary} />
+                    </View>
+                )}
+            </Pressable>
+        </View>
     );
 }

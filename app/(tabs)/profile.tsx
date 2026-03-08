@@ -15,9 +15,32 @@ import { Colors } from "../../constants/Colors";
 import { itemsService } from "../../services/items.service";
 import { Item, ItemStatus } from "../../types";
 import { useRouter, useFocusEffect } from "expo-router";
-import { MasonryImage } from "../../components/MasonryImage";
 
 type ProfileTab = "current" | "past" | "received" | "liked";
+
+
+function ProfileCard({ uri, cardWidth, onPress }: { uri: string; cardWidth: number; onPress: () => void }) {
+  const [ratio, setRatio] = useState<number>(3 / 4);
+  useEffect(() => {
+    Image.getSize(uri, (w, h) => setRatio(w / h), () => {});
+  }, [uri]);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{
+        width: "100%",
+        aspectRatio: ratio,
+        borderRadius: 14,
+        overflow: "hidden",
+        backgroundColor: "#C4DBC4",
+        marginBottom: 10,
+      }}
+    >
+      <Image source={{ uri }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
+    </Pressable>
+  );
+}
 
 const TABS: { key: ProfileTab; label: string }[] = [
   { key: "current", label: "Current" },
@@ -34,7 +57,6 @@ export default function ProfileScreen() {
   const [myItems, setMyItems] = useState<Item[]>([]);
   const [claimedItems, setClaimedItems] = useState<Item[]>([]);
   const [likedItems, setLikedItems] = useState<Item[]>([]);
-  const [aspectRatios, setAspectRatios] = useState<{ [key: string]: number }>({});
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -42,7 +64,7 @@ export default function ProfileScreen() {
     try {
       const [mine, claimed, liked] = await Promise.all([
         itemsService.getMine(),
-        itemsService.getClaimed(),
+        itemsService.getReceived(),
         itemsService.getLiked(),
       ]);
       setMyItems(mine);
@@ -58,27 +80,6 @@ export default function ProfileScreen() {
       fetchData();
     }, [fetchData])
   );
-
-  useEffect(() => {
-    // Pre-fetch aspect ratios for greedy balancing
-    const allItems = [...myItems, ...claimedItems, ...likedItems];
-    allItems.forEach((item) => {
-      if (aspectRatios[item._id]) return;
-      const uri = item.imageUrls?.[0];
-      if (!uri) return;
-
-      Image.getSize(
-        uri,
-        (width, height) => {
-          setAspectRatios((prev) => ({ ...prev, [item._id]: width / height }));
-        },
-        () => {
-          // Fallback to square if error
-          setAspectRatios((prev) => ({ ...prev, [item._id]: 1 }));
-        }
-      );
-    });
-  }, [myItems, claimedItems, likedItems]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -268,19 +269,19 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
-        {/* ── Subtab Bar (filing cabinet style) ── */}
+        {/* ── Subtab Bar ── */}
         <View
           style={{
             flexDirection: "row",
             backgroundColor: Colors.background,
-            paddingHorizontal: 12,
+            marginHorizontal: 16,
             paddingTop: 8,
-            borderBottomWidth: 1,
-            borderBottomColor: Colors.brown.dark,
           }}
         >
-          {TABS.map((tab) => {
+          {TABS.map((tab, index) => {
             const isActive = activeTab === (tab.key as any);
+            const isFirst = index === 0;
+            const isLast = index === TABS.length - 1;
             return (
               <Pressable
                 key={tab.key}
@@ -289,14 +290,13 @@ export default function ProfileScreen() {
                   flex: 1,
                   alignItems: "center",
                   paddingVertical: 10,
-                  marginHorizontal: 3,
-                  borderTopLeftRadius: 14,
-                  borderTopRightRadius: 14,
-                  backgroundColor: isActive ? Colors.primary : "transparent",
-                  borderWidth: 1,
+                  borderTopWidth: isActive ? 1 : 0,
+                  borderLeftWidth: isActive ? 1 : 0,
+                  borderRightWidth: isActive ? 1 : 0,
                   borderBottomWidth: isActive ? 0 : 1,
                   borderColor: Colors.brown.dark,
-                  marginBottom: -1,
+                  borderTopLeftRadius: isActive ? 14 : 0,
+                  borderTopRightRadius: isActive ? 14 : 0,
                 }}
               >
                 <Text
@@ -314,7 +314,15 @@ export default function ProfileScreen() {
         </View>
 
         {/* ── Tab Content ── */}
-        <View style={{ padding: 16, minHeight: 300 }}>
+        <View style={{
+          marginHorizontal: 16,
+          borderLeftWidth: 1,
+          borderRightWidth: 1,
+          borderColor: Colors.brown.dark,
+          paddingHorizontal: 8,
+          paddingTop: 12,
+          paddingBottom: 12,
+        }}>
           {loading ? (
             <View style={{ alignItems: "center", paddingTop: 60 }}>
               <ActivityIndicator size="large" color={Colors.primary} />
@@ -352,38 +360,23 @@ export default function ProfileScreen() {
             </View>
           ) : (
             (() => {
-              // Split items into 2 columns using a "greedy" balancing algorithm
               const leftColumn: Item[] = [];
               const rightColumn: Item[] = [];
-              let leftHeight = 0;
-              let rightHeight = 0;
-
-              tabData.forEach((item) => {
-                const ratio = aspectRatios[item._id] || 1;
-                const heightWeight = 1 / ratio;
-
-                if (leftHeight <= rightHeight) {
-                  leftColumn.push(item);
-                  leftHeight += heightWeight;
-                } else {
-                  rightColumn.push(item);
-                  rightHeight += heightWeight;
-                }
+              tabData.forEach((item, i) => {
+                (i % 2 === 0 ? leftColumn : rightColumn).push(item);
               });
+              const gap = 10;
+              // 16 margin + 1 border + 8 padding per side = 50 total
+              const cardWidth = (width - 50 - gap) / 2;
 
-              const gap = 12;
-              const columnWidth = (width - 32 - gap) / 2;
-
-              const renderMasonryItem = (item: Item) => {
-                const sourceUri = item.imageUrls && item.imageUrls.length > 0
-                  ? item.imageUrls[0]
-                  : "https://via.placeholder.com/300x400?text=No+Image";
-
+              const renderCard = (item: Item) => {
+                const uri = item.imageUrls?.[0]
+                  || "https://via.placeholder.com/300x400?text=No+Image";
                 return (
-                  <MasonryImage
+                  <ProfileCard
                     key={item._id}
-                    uri={sourceUri}
-                    columnWidth={columnWidth}
+                    uri={uri}
+                    cardWidth={cardWidth}
                     onPress={() => router.push(`/item/${item._id}`)}
                   />
                 );
@@ -391,14 +384,8 @@ export default function ProfileScreen() {
 
               return (
                 <View style={{ flexDirection: "row", gap }}>
-                  {/* Left Column */}
-                  <View style={{ flex: 1 }}>
-                    {leftColumn.map((item) => renderMasonryItem(item))}
-                  </View>
-                  {/* Right Column */}
-                  <View style={{ flex: 1 }}>
-                    {rightColumn.map((item) => renderMasonryItem(item))}
-                  </View>
+                  <View style={{ width: cardWidth }}>{leftColumn.map(renderCard)}</View>
+                  <View style={{ width: cardWidth }}>{rightColumn.map(renderCard)}</View>
                 </View>
               );
             })()
