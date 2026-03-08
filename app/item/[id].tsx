@@ -13,7 +13,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
@@ -326,7 +326,7 @@ export default function ItemDetailScreen() {
         ) : null}
 
         {/* Bottom spacing for scroll */}
-        <View className="h-24" />
+        <View className="h-48" />
       </ScrollView>
 
       {/* Docked Message Button */}

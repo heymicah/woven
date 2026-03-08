@@ -3,6 +3,8 @@ import { Request } from "express";
 // TODO: Extract shared types into a common package with the frontend
 export interface AuthRequest extends Request {
   userId?: string;
+  file?: any;
+  files?: any;
 }
 
 export enum ItemCategory {

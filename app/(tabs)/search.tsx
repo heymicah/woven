@@ -1,189 +1,324 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   View,
-  Text,
   TextInput,
   ScrollView,
+  TouchableOpacity,
+  Text,
+  Dimensions,
+  Keyboard,
   Pressable,
-  Image,
-  ActivityIndicator,
-  useWindowDimensions,
 } from "react-native";
-import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { ItemCategory, Item } from "../../types";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
+import * as SecureStore from "expo-secure-store";
 import { Colors } from "../../constants/Colors";
-import { itemsService } from "../../services/items.service";
 
-const CATEGORIES = Object.values(ItemCategory);
+const RECENT_SEARCHES_KEY = "recent_searches";
+const MAX_RECENT = 10;
+
+const CATEGORIES = [
+  "Recently Added",
+  "T-Shirts",
+  "Blouses & Button-Ups",
+  "Sweaters & Hoodies",
+  "Jackets & Coats",
+  "Jeans",
+  "Pants & Trousers",
+  "Shorts",
+  "Skirts",
+  "Dresses",
+  "Activewear",
+  "Shoes",
+  "Bags",
+  "Hats & Accessories",
+];
+
+async function getRecentSearches(): Promise<string[]> {
+  try {
+    const raw = await SecureStore.getItemAsync(RECENT_SEARCHES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function addRecentSearch(term: string): Promise<string[]> {
+  const recent = await getRecentSearches();
+  const filtered = recent.filter((s) => s.toLowerCase() !== term.toLowerCase());
+  const updated = [term, ...filtered].slice(0, MAX_RECENT);
+  await SecureStore.setItemAsync(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+  return updated;
+}
+
+async function removeRecentSearch(term: string): Promise<string[]> {
+  const recent = await getRecentSearches();
+  const updated = recent.filter((s) => s !== term);
+  await SecureStore.setItemAsync(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+  return updated;
+}
 
 export default function SearchScreen() {
-  const router = useRouter();
   const [query, setQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [items, setItems] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const inputRef = useRef<TextInput>(null);
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
 
-  const { width } = useWindowDimensions();
+  const screenWidth = Dimensions.get("window").width;
+  const horizontalPadding = 16;
   const gap = 12;
-  const padding = 16;
-  const columnWidth = (width - padding * 2 - gap) / 2;
+  const buttonWidth = (screenWidth - horizontalPadding * 2 - gap) / 2;
 
-  const fetchItems = useCallback(async () => {
-    const params: Record<string, string> = {};
-    if (query.trim()) params.search = query.trim();
-    if (selectedCategory) params.category = selectedCategory;
+  // Load recent searches when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      getRecentSearches().then(setRecentSearches);
+    }, [])
+  );
 
-    // Only search if there's a query or a category filter
-    if (!params.search && !params.category) {
-      setItems([]);
-      setHasSearched(false);
-      return;
+  const navigateToSearch = async (searchTerm: string) => {
+    Keyboard.dismiss();
+    setIsFocused(false);
+    const updated = await addRecentSearch(searchTerm);
+    setRecentSearches(updated);
+    router.push(`/search/${encodeURIComponent(searchTerm)}`);
+  };
+
+  const handleSearch = () => {
+    const trimmed = query.trim();
+    if (trimmed) {
+      navigateToSearch(trimmed);
     }
+  };
 
-    setLoading(true);
-    setHasSearched(true);
-    try {
-      const data = await itemsService.getAll(params);
-      setItems(data);
-    } catch (err: any) {
-      console.error("[Search] Failed to fetch items:", err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [query, selectedCategory]);
+  const handleCategoryPress = (category: string) => {
+    navigateToSearch(category);
+  };
 
-  // Re-fetch when category changes
-  useEffect(() => {
-    if (selectedCategory) {
-      fetchItems();
-    }
-  }, [selectedCategory]);
+  const handleRecentPress = (term: string) => {
+    setQuery(term);
+    navigateToSearch(term);
+  };
 
-  // Split items into 2 columns for masonry layout
-  const leftColumn: Item[] = [];
-  const rightColumn: Item[] = [];
-  items.forEach((item, index) => {
-    if (index % 2 === 0) leftColumn.push(item);
-    else rightColumn.push(item);
-  });
+  const handleRemoveRecent = async (term: string) => {
+    const updated = await removeRecentSearch(term);
+    setRecentSearches(updated);
+  };
 
-  const renderItem = (item: Item) => {
-    const hash = item._id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const height = 180 + (hash % 140);
-    const sourceUri = item.imageUrls && item.imageUrls.length > 0
-      ? item.imageUrls[0]
-      : "https://via.placeholder.com/300x400?text=No+Image";
-
-    return (
-      <Pressable
-        key={item._id}
-        onPress={() => router.push(`/item/${item._id}`)}
-        style={{
-          width: columnWidth,
-          height,
-          marginBottom: gap,
-          borderRadius: 16,
-          backgroundColor: "#C4DBC4",
-          overflow: "hidden",
-          borderWidth: 1,
-          borderColor: Colors.border,
-        }}
-      >
-        <Image
-          source={{ uri: sourceUri }}
-          style={{ width: "100%", height: "100%" }}
-          resizeMode="cover"
-        />
-      </Pressable>
-    );
+  const handleCancelFocus = () => {
+    Keyboard.dismiss();
+    setIsFocused(false);
+    setQuery("");
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "white", borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12 }}>
-          <Ionicons name="search" size={20} color={Colors.textSecondary} />
-          <TextInput
-            style={{ flex: 1, marginLeft: 8, fontSize: 16 }}
-            placeholder="Search items..."
-            value={query}
-            onChangeText={setQuery}
-            returnKeyType="search"
-            onSubmitEditing={fetchItems}
-          />
+      {/* Search Bar - always on top */}
+      <View
+        style={{
+          paddingHorizontal: horizontalPadding,
+          paddingTop: insets.top + 16,
+          paddingBottom: 8,
+          backgroundColor: Colors.background,
+          zIndex: 10,
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View
+            style={{
+              flex: 1,
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: "#FFF1DA",
+              borderRadius: 12,
+              paddingHorizontal: 14,
+              paddingVertical: 14,
+            }}
+          >
+            <Ionicons name="search" size={20} color={Colors.textSecondary} />
+            <TextInput
+              ref={inputRef}
+              style={{
+                flex: 1,
+                marginLeft: 8,
+                color: Colors.text,
+                fontSize: 16,
+                paddingVertical: 0,
+              }}
+              placeholder="Search items..."
+              placeholderTextColor={Colors.textSecondary}
+              value={query}
+              onChangeText={setQuery}
+              onFocus={() => setIsFocused(true)}
+              onSubmitEditing={handleSearch}
+              returnKeyType="search"
+            />
+            {query.length > 0 && (
+              <TouchableOpacity onPress={() => setQuery("")}>
+                <Ionicons name="close-circle" size={20} color={Colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+          {isFocused && (
+            <TouchableOpacity onPress={handleCancelFocus} style={{ marginLeft: 12 }}>
+              <Text
+                style={{
+                  color: Colors.text,
+                  fontSize: 15,
+                  fontFamily: "Quicksand_500Medium",
+                }}
+              >
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ paddingHorizontal: 16, paddingVertical: 12, maxHeight: 56 }}
-        contentContainerStyle={{ gap: 8 }}
-      >
-        {CATEGORIES.map((cat) => (
-          <Pressable
-            key={cat}
-            onPress={() =>
-              setSelectedCategory(selectedCategory === cat ? null : cat)
-            }
+      {/* Recent Searches Overlay */}
+      {isFocused && (
+        <Pressable
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: Colors.background,
+            zIndex: 5,
+            paddingTop: insets.top + 16 + 60,
+            paddingHorizontal: horizontalPadding,
+          }}
+          onPress={handleCancelFocus}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            {recentSearches.length > 0 ? (
+              <>
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: "600",
+                    color: Colors.textSecondary,
+                    marginBottom: 12,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                    fontFamily: "Quicksand_600SemiBold",
+                  }}
+                >
+                  Recent Searches
+                </Text>
+                {recentSearches.map((term) => (
+                  <TouchableOpacity
+                    key={term}
+                    onPress={() => handleRecentPress(term)}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      paddingVertical: 13,
+                      borderBottomWidth: 1,
+                      borderBottomColor: Colors.border,
+                    }}
+                  >
+                    <Ionicons
+                      name="time-outline"
+                      size={18}
+                      color={Colors.textSecondary}
+                      style={{ marginRight: 12 }}
+                    />
+                    <Text
+                      style={{
+                        flex: 1,
+                        fontSize: 15,
+                        color: Colors.text,
+                        fontFamily: "Quicksand_500Medium",
+                      }}
+                    >
+                      {term}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => handleRemoveRecent(term)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="close" size={18} color={Colors.textSecondary} />
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                ))}
+              </>
+            ) : (
+              <View style={{ alignItems: "center", paddingTop: 40 }}>
+                <Ionicons
+                  name="time-outline"
+                  size={40}
+                  color={Colors.textSecondary}
+                  style={{ opacity: 0.4, marginBottom: 10 }}
+                />
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: Colors.textSecondary,
+                    fontFamily: "Quicksand_400Regular",
+                  }}
+                >
+                  No recent searches
+                </Text>
+              </View>
+            )}
+          </Pressable>
+        </Pressable>
+      )}
+
+      {/* Category Grid - shown when not focused */}
+      {!isFocused && (
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingHorizontal: horizontalPadding,
+            paddingTop: 12,
+            paddingBottom: insets.bottom + 16,
+          }}
+        >
+          <View
             style={{
-              paddingHorizontal: 16,
-              paddingVertical: 8,
-              borderRadius: 20,
-              backgroundColor: selectedCategory === cat ? Colors.primary : "white",
-              borderWidth: 1,
-              borderColor: selectedCategory === cat ? Colors.primary : "#E5E7EB",
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: gap,
             }}
           >
-            <Text
-              style={{
-                fontSize: 14,
-                textTransform: "capitalize",
-                color: selectedCategory === cat ? "white" : Colors.text,
-                fontWeight: selectedCategory === cat ? "600" : "400",
-              }}
-            >
-              {cat}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-
-      <ScrollView
-        contentContainerStyle={{ padding, paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {loading ? (
-          <View style={{ alignItems: "center", paddingTop: 60 }}>
-            <ActivityIndicator size="large" color={Colors.primary} />
+            {CATEGORIES.map((category) => (
+              <TouchableOpacity
+                key={category}
+                onPress={() => handleCategoryPress(category)}
+                activeOpacity={0.7}
+                style={{
+                  width: buttonWidth,
+                  backgroundColor: "#FFF1DA",
+                  paddingVertical: 20,
+                  borderRadius: 16,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    color: Colors.text,
+                    fontSize: 14,
+                    fontWeight: "600",
+                    textAlign: "center",
+                    fontFamily: "Quicksand_600SemiBold",
+                  }}
+                >
+                  {category}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
-        ) : !hasSearched ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 60 }}>
-            <Ionicons name="search-outline" size={48} color={Colors.border} />
-            <Text style={{ color: Colors.textSecondary, marginTop: 16, fontSize: 16 }}>
-              Search for clothing items
-            </Text>
-          </View>
-        ) : items.length === 0 ? (
-          <View style={{ alignItems: "center", paddingTop: 60 }}>
-            <Ionicons name="shirt-outline" size={48} color={Colors.border} />
-            <Text style={{ color: Colors.textSecondary, marginTop: 16, fontSize: 16 }}>
-              No items found
-            </Text>
-          </View>
-        ) : (
-          <View style={{ flexDirection: "row", gap }}>
-            <View style={{ flex: 1 }}>
-              {leftColumn.map((item) => renderItem(item))}
-            </View>
-            <View style={{ flex: 1 }}>
-              {rightColumn.map((item) => renderItem(item))}
-            </View>
-          </View>
-        )}
-      </ScrollView>
+        </ScrollView>
+      )}
     </View>
   );
 }
