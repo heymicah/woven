@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
+import { View, Text, Pressable, ScrollView, StyleSheet, Keyboard } from "react-native";
 import { Colors } from "../constants/Colors";
 
 export interface ChipOption {
@@ -28,7 +28,7 @@ export default function SingleSelectChipGroup({
     return (
       <Pressable
         key={opt.value}
-        onPress={() => onSelect(opt.value)}
+        onPress={() => { Keyboard.dismiss(); onSelect(opt.value); }}
         style={[
           styles.chip,
           isActive ? styles.chipActive : styles.chipInactive,

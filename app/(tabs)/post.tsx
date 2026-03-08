@@ -30,10 +30,22 @@ import SingleSelectChipGroup from "../../components/SingleSelectChipGroup";
 
 // ── Chip option builders ────────────────────────────────────────
 
-const CATEGORY_OPTIONS = Object.values(ItemCategory).map((val) => ({
-  value: val,
-  label: val.charAt(0).toUpperCase() + val.slice(1),
-}));
+const CATEGORY_OPTIONS = [
+  { value: ItemCategory.T_SHIRTS, label: "T-Shirts" },
+  { value: ItemCategory.BLOUSES, label: "Blouses & Button-Ups" },
+  { value: ItemCategory.SWEATERS, label: "Sweaters & Hoodies" },
+  { value: ItemCategory.JACKETS, label: "Jackets & Coats" },
+  { value: ItemCategory.JEANS, label: "Jeans" },
+  { value: ItemCategory.PANTS, label: "Pants & Trousers" },
+  { value: ItemCategory.SHORTS, label: "Shorts" },
+  { value: ItemCategory.SKIRTS, label: "Skirts" },
+  { value: ItemCategory.DRESSES, label: "Dresses" },
+  { value: ItemCategory.ACTIVEWEAR, label: "Activewear" },
+  { value: ItemCategory.SHOES, label: "Shoes" },
+  { value: ItemCategory.BAGS, label: "Bags" },
+  { value: ItemCategory.ACCESSORIES, label: "Hats & Accessories" },
+  { value: ItemCategory.OTHER, label: "Other" },
+];
 
 const FIT_OPTIONS = [
   { value: IntendedFit.WOMEN, label: "Women" },
@@ -196,6 +208,15 @@ export default function PostScreen() {
       } else {
         await itemsService.create(itemData);
       }
+
+      // Clear form
+      setPhotos([]);
+      setTitle("");
+      setCategory("");
+      setIntendedFit("");
+      setSize("");
+      setCondition("");
+      setDescription("");
 
       Alert.alert(isEditMode ? "Updated!" : "Posted!", isEditMode ? "Your item has been updated." : "Your item is now live.");
       router.replace("/(tabs)");

@@ -8,11 +8,18 @@ export interface AuthRequest extends Request {
 }
 
 export enum ItemCategory {
-  TOPS = "tops",
-  BOTTOMS = "bottoms",
+  T_SHIRTS = "t_shirts",
+  BLOUSES = "blouses",
+  SWEATERS = "sweaters",
+  JACKETS = "jackets",
+  JEANS = "jeans",
+  PANTS = "pants",
+  SHORTS = "shorts",
+  SKIRTS = "skirts",
   DRESSES = "dresses",
-  OUTERWEAR = "outerwear",
+  ACTIVEWEAR = "activewear",
   SHOES = "shoes",
+  BAGS = "bags",
   ACCESSORIES = "accessories",
   OTHER = "other",
 }
