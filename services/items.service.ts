@@ -22,6 +22,11 @@ export const itemsService = {
     return data;
   },
 
+  getLiked: async (): Promise<Item[]> => {
+    const { data } = await api.get<Item[]>("/items/liked");
+    return data;
+  },
+
   create: async (item: Partial<Item>): Promise<Item> => {
     const { data } = await api.post<Item>("/items", item);
     return data;
@@ -29,6 +34,11 @@ export const itemsService = {
 
   update: async (id: string, item: Partial<Item>): Promise<Item> => {
     const { data } = await api.put<Item>(`/items/${id}`, item);
+    return data;
+  },
+
+  toggleLike: async (id: string): Promise<{ liked: boolean }> => {
+    const { data } = await api.post<{ liked: boolean }>(`/items/${id}/toggle-like`);
     return data;
   },
 

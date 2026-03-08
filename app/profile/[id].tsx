@@ -14,8 +14,11 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Colors } from "../../constants/Colors";
 import { itemsService } from "../../services/items.service";
 import { userService } from "../../services/user.service";
+import { reviewsService } from "../../services/reviews.service";
 import { Item, ItemStatus, User } from "../../types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { MasonryImage } from "../../components/MasonryImage";
+import { fetchAspectRatiosBatch } from "../../utils/image";
 
 type ProfileTab = "current" | "past";
 
@@ -33,21 +36,30 @@ export default function PublicProfileScreen() {
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<ProfileTab>("current");
   const [items, setItems] = useState<Item[]>([]);
+  const [aspectRatios, setAspectRatios] = useState<{ [key: string]: number }>({});
+  const [avgRating, setAvgRating] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!id) return;
     try {
-      const [userData, userItems] = await Promise.all([
+      const [userData, userItems, reviewsData] = await Promise.all([
         userService.getById(id),
         itemsService.getAll({
           userId: id,
           status: activeTab === "current" ? ItemStatus.AVAILABLE : ItemStatus.COMPLETED
         }),
+        reviewsService.getForUser(id),
       ]);
       setUser(userData);
       setItems(userItems);
+      setAvgRating(reviewsData.avgRating);
+
+      // Batch fetch aspect ratios to prevent glitching
+      const uris = userItems.map(i => i.imageUrls?.[0]).filter((u): u is string => !!u);
+      const ratiosMap = await fetchAspectRatiosBatch(uris);
+      setAspectRatios(prev => ({ ...prev, ...ratiosMap }));
     } catch (error) {
       console.error("Failed to fetch public profile data:", error);
     }
@@ -81,38 +93,34 @@ export default function PublicProfileScreen() {
   const columnWidth = (width - padding * 2 - gap) / 2;
 
   const renderGridItem = (item: Item) => {
-    // Pseudo-random height matching Explore page logic
-    const hash = item._id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const height = 180 + (hash % 140);
-
     return (
-      <Pressable
+      <MasonryImage
         key={item._id}
+        uri={item.imageUrls?.[0] || "https://via.placeholder.com/300x400?text=No+Image"}
+        aspectRatio={aspectRatios[item._id]}
+        columnWidth={columnWidth}
         onPress={() => router.push(`/item/${item._id}`)}
-        style={{
-          height,
-          marginBottom: gap,
-          borderRadius: 16,
-          backgroundColor: "#C4DBC4",
-          overflow: "hidden",
-          borderWidth: 1,
-          borderColor: Colors.border || "#e5e7eb",
-        }}
-      >
-        <Image
-          source={{ uri: item.imageUrls?.[0] || "https://via.placeholder.com/300x400?text=No+Image" }}
-          style={{ width: "100%", height: "100%" }}
-          resizeMode="cover"
-        />
-      </Pressable>
+      />
     );
   };
 
+  // Split items into 2 columns using a "greedy" balancing algorithm
   const leftColumn: Item[] = [];
   const rightColumn: Item[] = [];
-  items.forEach((item, index) => {
-    if (index % 2 === 0) leftColumn.push(item);
-    else rightColumn.push(item);
+  let leftHeight = 0;
+  let rightHeight = 0;
+
+  items.forEach((item) => {
+    const ratio = aspectRatios[item._id] || 1;
+    const heightWeight = 1 / ratio;
+
+    if (leftHeight <= rightHeight) {
+      leftColumn.push(item);
+      leftHeight += heightWeight;
+    } else {
+      rightColumn.push(item);
+      rightHeight += heightWeight;
+    }
   });
 
   if (loading && !refreshing && !user) {
@@ -197,8 +205,7 @@ export default function PublicProfileScreen() {
               style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}
             >
               {[1, 2, 3, 4, 5].map((n) => {
-                const rating = 5.0; // Placeholder for now
-                const fill = Math.min(1, Math.max(0, rating - (n - 1)));
+                const fill = Math.min(1, Math.max(0, avgRating - (n - 1)));
                 return (
                   <View key={n} style={{ width: 15, height: 15, marginRight: 1 }}>
                     <Ionicons
@@ -217,7 +224,9 @@ export default function PublicProfileScreen() {
                   </View>
                 );
               })}
-              <Text style={{ fontSize: 14, fontWeight: "600", color: Colors.text, marginLeft: 5 }}>5.0</Text>
+              <Text style={{ fontSize: 14, fontWeight: "600", color: Colors.text, marginLeft: 5 }}>
+                {avgRating.toFixed(1)}
+              </Text>
               <Ionicons
                 name="chevron-forward"
                 size={14}
@@ -274,7 +283,7 @@ export default function PublicProfileScreen() {
         </View>
 
         {/* Grid Content */}
-        <View style={{ padding: padding, flexDirection: "row", gap: gap, width: "100%" }}>
+        <View style={{ padding: padding, flexDirection: "row", gap: gap }}>
           {items.length === 0 ? (
             <View style={{ flex: 1, alignItems: "center", paddingTop: 60 }}>
               <View

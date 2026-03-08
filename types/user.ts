@@ -5,6 +5,7 @@ export interface User {
   tokenBalance: number;
   avatarUrl?: string;
   bio?: string;
+  likedItems?: string[];
   createdAt: string;
   updatedAt: string;
 }

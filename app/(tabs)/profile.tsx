@@ -9,19 +9,23 @@ import {
   Image,
   useWindowDimensions,
 } from "react-native";
+import { ThemedText } from "../../components/ThemedText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "../../hooks/useAuth";
 import { Colors } from "../../constants/Colors";
 import { itemsService } from "../../services/items.service";
 import { Item, ItemStatus } from "../../types";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
+import { MasonryImage } from "../../components/MasonryImage";
+import { fetchAspectRatiosBatch } from "../../utils/image";
 
-type ProfileTab = "current" | "past" | "received";
+type ProfileTab = "current" | "past" | "received" | "liked";
 
 const TABS: { key: ProfileTab; label: string }[] = [
   { key: "current", label: "Current" },
   { key: "past", label: "Past" },
   { key: "received", label: "Received" },
+  { key: "liked", label: "Likes" },
 ];
 
 export default function ProfileScreen() {
@@ -31,26 +35,37 @@ export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState<ProfileTab>("current");
   const [myItems, setMyItems] = useState<Item[]>([]);
   const [receivedItems, setReceivedItems] = useState<Item[]>([]);
+  const [likedItems, setLikedItems] = useState<Item[]>([]);
+  const [aspectRatios, setAspectRatios] = useState<{ [key: string]: number }>({});
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
-      const [mine, received] = await Promise.all([
+      const [mine, received, liked] = await Promise.all([
         itemsService.getMine(),
         itemsService.getReceived(),
+        itemsService.getLiked(),
       ]);
       setMyItems(mine);
       setReceivedItems(received);
+      setLikedItems(liked);
+
+      // Batch fetch aspect ratios to prevent glitching
+      const allItems = [...mine, ...claimed, ...liked];
+      const uris = allItems.map(i => i.imageUrls?.[0]).filter((u): u is string => !!u);
+      const ratiosMap = await fetchAspectRatiosBatch(uris);
+      setAspectRatios(prev => ({ ...prev, ...ratiosMap }));
     } catch (error) {
       console.error("Failed to fetch profile data:", error);
     }
   }, []);
 
-  useEffect(() => {
-    setLoading(true);
-    fetchData().finally(() => setLoading(false));
-  }, [fetchData]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData])
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -73,6 +88,9 @@ export default function ProfileScreen() {
         return receivedItems;
       case "received":
         return receivedItems;
+        return claimedItems;
+      case "liked":
+        return likedItems;
       default:
         return [];
     }
@@ -84,6 +102,8 @@ export default function ProfileScreen() {
         return { icon: "shirt-outline" as const, message: "No active listings" };
       case "past":
         return { icon: "time-outline" as const, message: "No past listings" };
+      case "liked":
+        return { icon: "heart-outline" as const, message: "No liked items yet" };
       case "received":
         return { icon: "bag-outline" as const, message: "No received items yet" };
     }
@@ -135,17 +155,17 @@ export default function ProfileScreen() {
 
           {/* Info */}
           <View style={{ flex: 1, paddingTop: 6 }}>
-            <Text
+            <ThemedText
+              variant="bold"
               style={{
                 fontSize: 22,
-                fontWeight: "700",
                 color: Colors.heading,
               }}
             >
               {user?.username || "Username"}
-            </Text>
+            </ThemedText>
             {user?.bio ? (
-              <Text
+              <ThemedText
                 style={{
                   fontSize: 13,
                   color: Colors.textSecondary,
@@ -154,25 +174,25 @@ export default function ProfileScreen() {
                 numberOfLines={2}
               >
                 {user.bio}
-              </Text>
+              </ThemedText>
             ) : null}
 
             {/* Tokens */}
             <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
               <View style={{ width: 16, height: 16, borderRadius: 8, borderWidth: 1.5, borderColor: Colors.primary, alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontSize: 9, fontWeight: "800", color: Colors.primary, marginTop: -0.5 }}>$</Text>
+                <ThemedText variant="bold" style={{ fontSize: 9, color: Colors.primary, marginTop: -0.5 }}>$</ThemedText>
               </View>
-              <Text
+              <ThemedText
+                variant="semibold"
                 style={{
                   fontSize: 15,
-                  fontWeight: "600",
                   color: Colors.text,
                   marginLeft: 5,
                 }}
               >
                 {user?.tokenBalance ?? 0}
-              </Text>
-              <Text
+              </ThemedText>
+              <ThemedText
                 style={{
                   fontSize: 13,
                   color: Colors.textSecondary,
@@ -180,7 +200,7 @@ export default function ProfileScreen() {
                 }}
               >
                 tokens
-              </Text>
+              </ThemedText>
             </View>
 
             {/* Rating — 5 stars, tappable to open reviews */}
@@ -209,16 +229,16 @@ export default function ProfileScreen() {
                   </View>
                 );
               })}
-              <Text
+              <ThemedText
+                variant="semibold"
                 style={{
                   fontSize: 14,
-                  fontWeight: "600",
                   color: Colors.text,
                   marginLeft: 5,
                 }}
               >
                 3.5
-              </Text>
+              </ThemedText>
               <Ionicons
                 name="chevron-forward"
                 size={14}
@@ -276,15 +296,15 @@ export default function ProfileScreen() {
                   marginBottom: -1,
                 }}
               >
-                <Text
+                <ThemedText
+                  variant={isActive ? "bold" : "medium"}
                   style={{
                     fontSize: 13,
-                    fontWeight: isActive ? "700" : "500",
                     color: isActive ? Colors.brown.dark : Colors.textSecondary,
                   }}
                 >
                   {tab.label}
-                </Text>
+                </ThemedText>
               </Pressable>
             );
           })}
@@ -317,60 +337,58 @@ export default function ProfileScreen() {
               >
                 <Ionicons name={emptyState?.icon as any} size={32} color={Colors.primary} />
               </View>
-              <Text
+              <ThemedText
+                variant="semibold"
                 style={{
                   fontSize: 16,
-                  fontWeight: "600",
                   color: Colors.textSecondary,
                 }}
               >
                 {emptyState?.message}
-              </Text>
+              </ThemedText>
             </View>
           ) : (
             (() => {
+              // Split items into 2 columns using a "greedy" balancing algorithm
               const leftColumn: Item[] = [];
               const rightColumn: Item[] = [];
-              tabData.forEach((item, index) => {
-                if (index % 2 === 0) leftColumn.push(item);
-                else rightColumn.push(item);
+              let leftHeight = 0;
+              let rightHeight = 0;
+
+              tabData.forEach((item) => {
+                const ratio = aspectRatios[item._id] || 1;
+                const heightWeight = 1 / ratio;
+
+                if (leftHeight <= rightHeight) {
+                  leftColumn.push(item);
+                  leftHeight += heightWeight;
+                } else {
+                  rightColumn.push(item);
+                  rightHeight += heightWeight;
+                }
               });
 
               const gap = 12;
               const columnWidth = (width - 32 - gap) / 2;
 
               const renderMasonryItem = (item: Item) => {
-                const hash = item._id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                const height = 180 + (hash % 140);
                 const sourceUri = item.imageUrls && item.imageUrls.length > 0
                   ? item.imageUrls[0]
                   : "https://via.placeholder.com/300x400?text=No+Image";
 
                 return (
-                  <Pressable
+                  <MasonryImage
                     key={item._id}
+                    uri={sourceUri}
+                    aspectRatio={aspectRatios[item._id]}
+                    columnWidth={columnWidth}
                     onPress={() => router.push(`/item/${item._id}`)}
-                    style={{
-                      height,
-                      marginBottom: gap,
-                      borderRadius: 16,
-                      backgroundColor: "#C4DBC4",
-                      overflow: "hidden",
-                      borderWidth: 1,
-                      borderColor: Colors.border,
-                    }}
-                  >
-                    <Image
-                      source={{ uri: sourceUri }}
-                      style={{ width: "100%", height: "100%" }}
-                      resizeMode="cover"
-                    />
-                  </Pressable>
+                  />
                 );
               };
 
               return (
-                <View style={{ flexDirection: "row", gap, width: "100%" }}>
+                <View style={{ flexDirection: "row", gap }}>
                   {/* Left Column */}
                   <View style={{ flex: 1 }}>
                     {leftColumn.map((item) => renderMasonryItem(item))}

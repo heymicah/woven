@@ -14,11 +14,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../../constants/Colors";
 import { Item } from "../../types";
 import { itemsService } from "../../services/items.service";
+import { MasonryImage } from "../../components/MasonryImage";
+import { fetchAspectRatiosBatch } from "../../utils/image";
 
 export default function ExploreScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<Item[]>([]);
+  const [aspectRatios, setAspectRatios] = useState<{ [key: string]: number }>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +31,11 @@ export default function ExploreScreen() {
       setError(null);
       const data = await itemsService.getAll();
       setItems(data);
+
+      // Batch fetch aspect ratios to prevent glitching
+      const uris = data.map(item => item.imageUrls?.[0]).filter((u): u is string => !!u);
+      const ratiosMap = await fetchAspectRatiosBatch(uris);
+      setAspectRatios(prev => ({ ...prev, ...ratiosMap }));
     } catch (err: any) {
       console.error("[Explore] Failed to fetch items:", err.message);
       setError("Couldn't load items. Pull down to retry.");
@@ -46,13 +54,23 @@ export default function ExploreScreen() {
     fetchItems();
   }, [fetchItems]);
 
-  // Split items into 2 columns for masonry layout
+  // Split items into 2 columns using a "greedy" balancing algorithm
   const leftColumn: Item[] = [];
   const rightColumn: Item[] = [];
+  let leftHeight = 0;
+  let rightHeight = 0;
 
-  items.forEach((item, index) => {
-    if (index % 2 === 0) leftColumn.push(item);
-    else rightColumn.push(item);
+  items.forEach((item) => {
+    const ratio = aspectRatios[item._id] || 1;
+    const heightWeight = 1 / ratio; // Estimated relative height
+
+    if (leftHeight <= rightHeight) {
+      leftColumn.push(item);
+      leftHeight += heightWeight;
+    } else {
+      rightColumn.push(item);
+      rightHeight += heightWeight;
+    }
   });
 
   const { width } = useWindowDimensions();
@@ -60,36 +78,19 @@ export default function ExploreScreen() {
   const padding = 16;
   const columnWidth = (width - padding * 2 - gap) / 2;
 
-  const renderItem = (item: Item) => {
-    // Generate a pseudo-random height between 180 and 320 based on the item ID
-    const hash = item._id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const height = 180 + (hash % 140);
-
-    const sourceUri = item.imageUrls && item.imageUrls.length > 0
-      ? item.imageUrls[0]
+  const renderItem = (itemData: Item) => {
+    const photoUri = itemData.imageUrls && itemData.imageUrls.length > 0
+      ? itemData.imageUrls[0]
       : "https://via.placeholder.com/300x400?text=No+Image";
 
     return (
-      <Pressable
-        key={item._id}
-        onPress={() => router.push(`/item/${item._id}`)}
-        style={{
-          width: columnWidth,
-          height,
-          marginBottom: gap,
-          borderRadius: 16,
-          backgroundColor: "#C4DBC4",
-          overflow: "hidden",
-          borderWidth: 1,
-          borderColor: Colors.border,
-        }}
-      >
-        <Image
-          source={{ uri: sourceUri }}
-          style={{ width: "100%", height: "100%" }}
-          resizeMode="cover"
-        />
-      </Pressable>
+      <MasonryImage
+        key={itemData._id}
+        uri={photoUri}
+        aspectRatio={aspectRatios[itemData._id]}
+        columnWidth={columnWidth}
+        onPress={() => router.push(`/item/${itemData._id}`)}
+      />
     );
   };
 
@@ -108,13 +109,13 @@ export default function ExploreScreen() {
           </View>
         ) : error ? (
           <View style={{ alignItems: "center", paddingTop: 60 }}>
-            <Text style={{ color: Colors.textSecondary, fontSize: 16, textAlign: "center" }}>
+            <Text style={{ color: Colors.textSecondary, fontSize: 16, textAlign: "center", fontFamily: "Quicksand_400Regular" }}>
               {error}
             </Text>
           </View>
         ) : items.length === 0 ? (
           <View style={{ alignItems: "center", paddingTop: 60 }}>
-            <Text style={{ color: Colors.textSecondary, fontSize: 16 }}>No items found</Text>
+            <Text style={{ color: Colors.textSecondary, fontSize: 16, fontFamily: "Quicksand_400Regular" }}>No items found</Text>
           </View>
         ) : (
           <View style={{ flexDirection: "row", gap }}>

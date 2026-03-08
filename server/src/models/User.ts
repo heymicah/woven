@@ -8,6 +8,7 @@ export interface IUser extends Document {
   tokenBalance: number;
   avatarUrl?: string;
   bio?: string;
+  likedItems: mongoose.Types.ObjectId[];
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -36,6 +37,7 @@ const userSchema = new Schema<IUser>(
     },
     avatarUrl: String,
     bio: String,
+    likedItems: [{ type: Schema.Types.ObjectId, ref: "Item" }],
   },
   { timestamps: true }
 );

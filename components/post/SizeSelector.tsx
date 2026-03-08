@@ -67,7 +67,7 @@ export default function SizeSelector({ selected, onSelect }: SizeSelectorProps) 
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Size</Text>
+      <Text style={styles.label}>Size<Text style={{ color: Colors.error }}> *</Text></Text>
 
       {/* Collapsed row — shows current selection */}
       <Pressable
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   chipActive: {
-    backgroundColor: Colors.secondary,
+    backgroundColor: Colors.primary,
   },
   chipInactive: {
     backgroundColor: "#FAE5C4",
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     fontFamily: "Quicksand_500Medium",
   },
   chipTextActive: {
-    color: "#FFFFFF",
+    color: Colors.brown.dark,
     fontWeight: "600",
     fontFamily: "Quicksand_600SemiBold",
   },

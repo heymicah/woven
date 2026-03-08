@@ -7,11 +7,13 @@ import {
   ScrollView,
   FlatList,
   Alert,
+  Share,
   Dimensions,
   Modal,
   ActivityIndicator,
   ViewToken,
 } from "react-native";
+import { ThemedText } from "../../components/ThemedText";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,7 +21,7 @@ import { Colors } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { messagesService } from "../../services/messages.service";
 import { itemsService } from "../../services/items.service";
-import { Item } from "../../types";
+import { Item, User } from "../../types";
 
 // Palette: #FFD1D9, #E28D9B, #FAE5C4, #96755F, #411E12
 const Palette = {
@@ -78,20 +80,26 @@ export default function ItemDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [liked, setLiked] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
   const [carouselWidth, setCarouselWidth] = useState(0);
   const [fullscreenVisible, setFullscreenVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
 
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
 
   useEffect(() => {
     if (!id) return;
     setLoading(true);
     itemsService
       .getById(id)
-      .then((data) => setItem(data))
+      .then((data) => {
+        setItem(data);
+        if (user?.likedItems?.includes(id)) {
+          setIsLiked(true);
+        }
+      })
       .catch(() => setError("Could not load item"))
       .finally(() => setLoading(false));
   }, [id]);
@@ -111,6 +119,66 @@ export default function ItemDetailScreen() {
     flatListRef.current?.scrollToIndex({ index, animated: true });
   };
 
+  const handleToggleLike = async () => {
+    if (!item || isLiking) return;
+    setIsLiking(true);
+    // Optimistic UI
+    const newLiked = !isLiked;
+    setIsLiked(newLiked);
+
+    try {
+      const response = await itemsService.toggleLike(item._id);
+      setIsLiked(response.liked);
+
+      // Update global user state
+      if (user) {
+        const currentLiked = user.likedItems || [];
+        let nextLiked = [...currentLiked];
+        if (response.liked) {
+          if (!nextLiked.includes(item._id)) nextLiked.push(item._id);
+        } else {
+          nextLiked = nextLiked.filter(id => id !== item._id);
+        }
+        updateUser({ ...user, likedItems: nextLiked });
+      }
+    } catch (error) {
+      console.error("Failed to toggle like:", error);
+      setIsLiked(!newLiked); // Revert
+      Alert.alert("Error", "Could not save to favorites");
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+  const handleDelete = () => {
+    if (!item) return;
+
+    Alert.alert(
+      "Delete Item?",
+      "Are you sure you want to delete this listing? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await itemsService.delete(item._id);
+              router.replace("/(tabs)");
+              Alert.alert("Deleted", "Your item has been removed.");
+            } catch (err) {
+              console.error("Failed to delete item:", err);
+              Alert.alert("Error", "Could not delete item. Please try again.");
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: Palette.cream, justifyContent: "center", alignItems: "center" }}>
@@ -123,11 +191,11 @@ export default function ItemDetailScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: Palette.cream, justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }}>
         <Ionicons name="alert-circle-outline" size={48} color={Palette.brown} />
-        <Text style={{ color: Palette.brown, fontSize: 16, marginTop: 16, textAlign: "center" }}>
+        <ThemedText style={{ color: Palette.brown, fontSize: 16, marginTop: 16, textAlign: "center" }}>
           {error || "Item not found"}
-        </Text>
+        </ThemedText>
         <Pressable onPress={() => router.back()} style={{ marginTop: 24 }}>
-          <Text style={{ color: Palette.green, fontWeight: "600", fontSize: 16 }}>Go Back</Text>
+          <ThemedText variant="semibold" style={{ color: Palette.green, fontSize: 16 }}>Go Back</ThemedText>
         </Pressable>
       </View>
     );
@@ -135,7 +203,7 @@ export default function ItemDetailScreen() {
 
   const images = item.imageUrls || [];
   const postedBy = typeof item.postedBy === "object" && item.postedBy !== null
-    ? item.postedBy as { _id: string; username: string }
+    ? item.postedBy as { _id: string; username: string; avatarUrl?: string }
     : null;
   const tags = [
     item.intendedFit ? item.intendedFit.charAt(0).toUpperCase() + item.intendedFit.slice(1) : null,
@@ -168,24 +236,66 @@ export default function ItemDetailScreen() {
 
           <View className="flex-row items-center" style={{ gap: 8 }}>
             {postedBy && user?._id === postedBy._id && (
-              <Pressable
-                onPress={() => router.push(`/(tabs)/post?id=${item._id}`)}
-                className="w-10 h-10 rounded-full items-center justify-center"
-                style={{
-                  backgroundColor: "#FFF1DA",
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.15,
-                  shadowRadius: 3,
-                  elevation: 3,
-                }}
-              >
-                <Ionicons name="create-outline" size={20} color={Palette.dark} />
-              </Pressable>
+              <>
+                <Pressable
+                  onPress={handleDelete}
+                  className="w-10 h-10 rounded-full items-center justify-center"
+                  style={{
+                    backgroundColor: "#FFF1DA",
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 3,
+                    elevation: 3,
+                  }}
+                >
+                  <Ionicons name="trash-outline" size={20} color={Palette.dark} />
+                </Pressable>
+
+                <Pressable
+                  onPress={() => router.push(`/item/edit?id=${item._id}`)}
+                  className="w-10 h-10 rounded-full items-center justify-center"
+                  style={{
+                    backgroundColor: "#FFF1DA",
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 3,
+                    elevation: 3,
+                  }}
+                >
+                  <Ionicons name="create-outline" size={20} color={Palette.dark} />
+                </Pressable>
+              </>
             )}
 
             <Pressable
-              onPress={() => Alert.alert("Share", "Sharing coming soon!")}
+              onPress={handleToggleLike}
+              className="w-10 h-10 rounded-full items-center justify-center"
+              style={{
+                backgroundColor: "#FFF1DA",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.15,
+                shadowRadius: 3,
+                elevation: 3,
+              }}
+            >
+              <Ionicons
+                name={isLiked ? "heart" : "heart-outline"}
+                size={20}
+                color={isLiked ? "#E91E63" : Palette.dark}
+              />
+            </Pressable>
+
+            <Pressable
+              onPress={async () => {
+                try {
+                  await Share.share({
+                    message: `Check out "${item.title}" on Woven!`,
+                  });
+                } catch { }
+              }}
               className="w-10 h-10 rounded-full items-center justify-center"
               style={{
                 backgroundColor: "#FFF1DA",
@@ -259,25 +369,7 @@ export default function ItemDetailScreen() {
             </View>
           )}
 
-          {/* Heart Button */}
-          <Pressable
-            onPress={() => setLiked(!liked)}
-            className="absolute bottom-3 right-3 w-10 h-10 rounded-full items-center justify-center"
-            style={{
-              backgroundColor: "#FFF1DA",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.15,
-              shadowRadius: 3,
-              elevation: 3,
-            }}
-          >
-            <Ionicons
-              name={liked ? "heart" : "heart-outline"}
-              size={20}
-              color={liked ? Palette.green : Palette.dark}
-            />
-          </Pressable>
+
         </View>
 
         {/* Thumbnail Strip — all images */}
@@ -307,9 +399,9 @@ export default function ItemDetailScreen() {
 
         {/* Product Name */}
         <View className="px-4 pt-1">
-          <Text className="text-xl font-bold" style={{ color: Palette.dark, fontFamily: "Quicksand_700Bold" }}>
+          <ThemedText variant="bold" style={{ fontSize: 20, color: Palette.dark }}>
             {item.title}
-          </Text>
+          </ThemedText>
         </View>
 
         {/* Pill Tags */}
@@ -320,9 +412,9 @@ export default function ItemDetailScreen() {
               className="rounded-full px-3 py-1"
               style={{ backgroundColor: Palette.brown }}
             >
-              <Text className="text-xs" style={{ color: "#FFFFFF", fontFamily: "Quicksand_600SemiBold" }}>
+              <ThemedText variant="semibold" style={{ fontSize: 12, color: "#FFFFFF" }}>
                 {tag}
-              </Text>
+              </ThemedText>
             </View>
           ))}
         </View>
@@ -334,10 +426,17 @@ export default function ItemDetailScreen() {
             className="flex-row items-center mx-4 mt-4 p-3 rounded-xl"
             style={{ backgroundColor: "#FFF1DA" }}
           >
-            <Ionicons name="person-circle" size={36} color={Palette.brown} />
-            <Text className="text-sm font-medium ml-2" style={{ color: Palette.dark, fontFamily: "Quicksand_500Medium" }}>
+            {postedBy.avatarUrl ? (
+              <Image
+                source={{ uri: postedBy.avatarUrl }}
+                style={{ width: 36, height: 36, borderRadius: 18 }}
+              />
+            ) : (
+              <Ionicons name="person-circle" size={36} color={Palette.brown} />
+            )}
+            <ThemedText variant="medium" style={{ fontSize: 14, color: Palette.dark, marginLeft: 8 }}>
               {postedBy.username}
-            </Text>
+            </ThemedText>
             <View className="flex-1" />
             <Ionicons name="chevron-forward" size={16} color={Palette.brown} />
           </Pressable>
@@ -346,9 +445,9 @@ export default function ItemDetailScreen() {
         {/* Description */}
         {item.description ? (
           <View className="mx-4 mt-3 p-4 rounded-xl" style={{ backgroundColor: "#FFF1DA" }}>
-            <Text className="text-sm leading-5" style={{ color: Palette.brown, fontFamily: "Quicksand_400Regular" }}>
+            <ThemedText style={{ fontSize: 14, lineHeight: 20, color: Palette.brown }}>
               {item.description}
-            </Text>
+            </ThemedText>
           </View>
         ) : null}
 
@@ -390,9 +489,9 @@ export default function ItemDetailScreen() {
               className="rounded-full py-4 items-center"
               style={{ backgroundColor: Palette.rose }}
             >
-              <Text className="font-semibold text-base" style={{ color: Palette.dark, fontFamily: "Quicksand_600SemiBold" }}>
+              <ThemedText variant="semibold" style={{ fontSize: 16, color: Palette.dark }}>
                 Message
-              </Text>
+              </ThemedText>
             </Pressable>
           </View>
         </SafeAreaView>
