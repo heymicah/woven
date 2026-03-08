@@ -43,7 +43,7 @@ export default function RegisterScreen() {
       <View style={styles.screen}>
         <View style={styles.form}>
           <Image
-            source={require("../../assets/woven word.png")}
+            source={require("../../assets/woven-word.png")}
             style={{ width: 300, height: 120, alignSelf: "center", marginBottom: 8 }}
             resizeMode="contain"
           />
