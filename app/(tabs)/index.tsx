@@ -106,14 +106,18 @@ export default function ExploreScreen() {
 
   const snapping = useRef(false);
 
-  // Snap back to hide drawer when user releases
+  // Snap back to hide drawer when user releases, and refresh data
   const snapBackIfNeeded = useCallback((y: number) => {
     if (y < DRAWER_HEIGHT && !snapping.current && !refreshing) {
       snapping.current = true;
       scrollRef.current?.scrollTo({ y: DRAWER_HEIGHT, animated: true });
-      setTimeout(() => { snapping.current = false; }, 500);
+      // Refresh after snap-back animation completes
+      setTimeout(() => {
+        snapping.current = false;
+        fetchItems();
+      }, 500);
     }
-  }, [refreshing]);
+  }, [refreshing, fetchItems]);
 
   const handleScrollEndDrag = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     snapBackIfNeeded(e.nativeEvent.contentOffset.y);

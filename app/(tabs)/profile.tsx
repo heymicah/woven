@@ -116,9 +116,13 @@ export default function ProfileScreen() {
     if (y < DRAWER_HEIGHT && !snapping.current && !refreshing) {
       snapping.current = true;
       scrollRef.current?.scrollTo({ y: DRAWER_HEIGHT, animated: true });
-      setTimeout(() => { snapping.current = false; }, 500);
+      // Refresh after snap-back animation completes
+      setTimeout(() => {
+        snapping.current = false;
+        fetchData();
+      }, 500);
     }
-  }, [refreshing]);
+  }, [refreshing, fetchData]);
 
   const handleScrollEndDrag = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     snapBackIfNeeded(e.nativeEvent.contentOffset.y);
