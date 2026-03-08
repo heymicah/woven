@@ -19,7 +19,7 @@ import { Colors } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { messagesService } from "../../services/messages.service";
 import { itemsService } from "../../services/items.service";
-import { Item } from "../../types";
+import { Item, User } from "../../types";
 
 // Palette: #FFD1D9, #E28D9B, #FAE5C4, #96755F, #411E12
 const Palette = {
@@ -78,20 +78,26 @@ export default function ItemDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [liked, setLiked] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
   const [carouselWidth, setCarouselWidth] = useState(0);
   const [fullscreenVisible, setFullscreenVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
 
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
 
   useEffect(() => {
     if (!id) return;
     setLoading(true);
     itemsService
       .getById(id)
-      .then((data) => setItem(data))
+      .then((data) => {
+        setItem(data);
+        if (user?.likedItems?.includes(id)) {
+          setIsLiked(true);
+        }
+      })
       .catch(() => setError("Could not load item"))
       .finally(() => setLoading(false));
   }, [id]);
@@ -109,6 +115,37 @@ export default function ItemDetailScreen() {
 
   const scrollToImage = (index: number) => {
     flatListRef.current?.scrollToIndex({ index, animated: true });
+  };
+
+  const handleToggleLike = async () => {
+    if (!item || isLiking) return;
+    setIsLiking(true);
+    // Optimistic UI
+    const newLiked = !isLiked;
+    setIsLiked(newLiked);
+
+    try {
+      const response = await itemsService.toggleLike(item._id);
+      setIsLiked(response.liked);
+
+      // Update global user state
+      if (user) {
+        const currentLiked = user.likedItems || [];
+        let nextLiked = [...currentLiked];
+        if (response.liked) {
+          if (!nextLiked.includes(item._id)) nextLiked.push(item._id);
+        } else {
+          nextLiked = nextLiked.filter(id => id !== item._id);
+        }
+        updateUser({ ...user, likedItems: nextLiked });
+      }
+    } catch (error) {
+      console.error("Failed to toggle like:", error);
+      setIsLiked(!newLiked); // Revert
+      Alert.alert("Error", "Could not save to favorites");
+    } finally {
+      setIsLiking(false);
+    }
   };
 
   if (loading) {
@@ -185,6 +222,25 @@ export default function ItemDetailScreen() {
             )}
 
             <Pressable
+              onPress={handleToggleLike}
+              className="w-10 h-10 rounded-full items-center justify-center"
+              style={{
+                backgroundColor: "#FFF1DA",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.15,
+                shadowRadius: 3,
+                elevation: 3,
+              }}
+            >
+              <Ionicons
+                name={isLiked ? "heart" : "heart-outline"}
+                size={20}
+                color={isLiked ? "#E91E63" : Palette.dark}
+              />
+            </Pressable>
+
+            <Pressable
               onPress={() => Alert.alert("Share", "Sharing coming soon!")}
               className="w-10 h-10 rounded-full items-center justify-center"
               style={{
@@ -259,25 +315,7 @@ export default function ItemDetailScreen() {
             </View>
           )}
 
-          {/* Heart Button */}
-          <Pressable
-            onPress={() => setLiked(!liked)}
-            className="absolute bottom-3 right-3 w-10 h-10 rounded-full items-center justify-center"
-            style={{
-              backgroundColor: "#FFF1DA",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.15,
-              shadowRadius: 3,
-              elevation: 3,
-            }}
-          >
-            <Ionicons
-              name={liked ? "heart" : "heart-outline"}
-              size={20}
-              color={liked ? Palette.green : Palette.dark}
-            />
-          </Pressable>
+
         </View>
 
         {/* Thumbnail Strip — all images */}

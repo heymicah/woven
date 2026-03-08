@@ -14,14 +14,16 @@ import { useAuth } from "../../hooks/useAuth";
 import { Colors } from "../../constants/Colors";
 import { itemsService } from "../../services/items.service";
 import { Item, ItemStatus } from "../../types";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
+import { MasonryImage } from "../../components/MasonryImage";
 
-type ProfileTab = "current" | "past" | "received";
+type ProfileTab = "current" | "past" | "received" | "liked";
 
 const TABS: { key: ProfileTab; label: string }[] = [
   { key: "current", label: "Current" },
   { key: "past", label: "Past" },
   { key: "received", label: "Received" },
+  { key: "liked", label: "Likes" },
 ];
 
 export default function ProfileScreen() {
@@ -31,26 +33,52 @@ export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState<ProfileTab>("current");
   const [myItems, setMyItems] = useState<Item[]>([]);
   const [claimedItems, setClaimedItems] = useState<Item[]>([]);
+  const [likedItems, setLikedItems] = useState<Item[]>([]);
+  const [aspectRatios, setAspectRatios] = useState<{ [key: string]: number }>({});
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
-      const [mine, claimed] = await Promise.all([
+      const [mine, claimed, liked] = await Promise.all([
         itemsService.getMine(),
         itemsService.getClaimed(),
+        itemsService.getLiked(),
       ]);
       setMyItems(mine);
       setClaimedItems(claimed);
+      setLikedItems(liked);
     } catch (error) {
       console.error("Failed to fetch profile data:", error);
     }
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData])
+  );
+
   useEffect(() => {
-    setLoading(true);
-    fetchData().finally(() => setLoading(false));
-  }, [fetchData]);
+    // Pre-fetch aspect ratios for greedy balancing
+    const allItems = [...myItems, ...claimedItems, ...likedItems];
+    allItems.forEach((item) => {
+      if (aspectRatios[item._id]) return;
+      const uri = item.imageUrls?.[0];
+      if (!uri) return;
+
+      Image.getSize(
+        uri,
+        (width, height) => {
+          setAspectRatios((prev) => ({ ...prev, [item._id]: width / height }));
+        },
+        () => {
+          // Fallback to square if error
+          setAspectRatios((prev) => ({ ...prev, [item._id]: 1 }));
+        }
+      );
+    });
+  }, [myItems, claimedItems, likedItems]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -69,8 +97,8 @@ export default function ProfileScreen() {
         return pastItems;
       case "received":
         return claimedItems;
-      case "received":
-        return claimedItems;
+      case "liked":
+        return likedItems;
       default:
         return [];
     }
@@ -82,6 +110,8 @@ export default function ProfileScreen() {
         return { icon: "shirt-outline" as const, message: "No active listings" };
       case "past":
         return { icon: "time-outline" as const, message: "No past listings" };
+      case "liked":
+        return { icon: "heart-outline" as const, message: "No liked items yet" };
       case "received":
         return { icon: "bag-outline" as const, message: "No received items yet" };
     }
@@ -322,48 +352,45 @@ export default function ProfileScreen() {
             </View>
           ) : (
             (() => {
+              // Split items into 2 columns using a "greedy" balancing algorithm
               const leftColumn: Item[] = [];
               const rightColumn: Item[] = [];
-              tabData.forEach((item, index) => {
-                if (index % 2 === 0) leftColumn.push(item);
-                else rightColumn.push(item);
+              let leftHeight = 0;
+              let rightHeight = 0;
+
+              tabData.forEach((item) => {
+                const ratio = aspectRatios[item._id] || 1;
+                const heightWeight = 1 / ratio;
+
+                if (leftHeight <= rightHeight) {
+                  leftColumn.push(item);
+                  leftHeight += heightWeight;
+                } else {
+                  rightColumn.push(item);
+                  rightHeight += heightWeight;
+                }
               });
 
               const gap = 12;
               const columnWidth = (width - 32 - gap) / 2;
 
               const renderMasonryItem = (item: Item) => {
-                const hash = item._id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                const height = 180 + (hash % 140);
                 const sourceUri = item.imageUrls && item.imageUrls.length > 0
                   ? item.imageUrls[0]
                   : "https://via.placeholder.com/300x400?text=No+Image";
 
                 return (
-                  <Pressable
+                  <MasonryImage
                     key={item._id}
+                    uri={sourceUri}
+                    columnWidth={columnWidth}
                     onPress={() => router.push(`/item/${item._id}`)}
-                    style={{
-                      height,
-                      marginBottom: gap,
-                      borderRadius: 16,
-                      backgroundColor: "#C4DBC4",
-                      overflow: "hidden",
-                      borderWidth: 1,
-                      borderColor: Colors.border,
-                    }}
-                  >
-                    <Image
-                      source={{ uri: sourceUri }}
-                      style={{ width: "100%", height: "100%" }}
-                      resizeMode="cover"
-                    />
-                  </Pressable>
+                  />
                 );
               };
 
               return (
-                <View style={{ flexDirection: "row", gap, width: "100%" }}>
+                <View style={{ flexDirection: "row", gap }}>
                   {/* Left Column */}
                   <View style={{ flex: 1 }}>
                     {leftColumn.map((item) => renderMasonryItem(item))}

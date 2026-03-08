@@ -16,6 +16,7 @@ import { itemsService } from "../../services/items.service";
 import { userService } from "../../services/user.service";
 import { Item, ItemStatus, User } from "../../types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { MasonryImage } from "../../components/MasonryImage";
 
 type ProfileTab = "current" | "past";
 
@@ -33,6 +34,7 @@ export default function PublicProfileScreen() {
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<ProfileTab>("current");
   const [items, setItems] = useState<Item[]>([]);
+  const [aspectRatios, setAspectRatios] = useState<{ [key: string]: number }>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -58,6 +60,26 @@ export default function PublicProfileScreen() {
     fetchData().finally(() => setLoading(false));
   }, [id, activeTab]);
 
+  useEffect(() => {
+    // Pre-fetch aspect ratios for greedy balancing
+    items.forEach((item) => {
+      if (aspectRatios[item._id]) return;
+      const uri = item.imageUrls?.[0];
+      if (!uri) return;
+
+      Image.getSize(
+        uri,
+        (width, height) => {
+          setAspectRatios((prev) => ({ ...prev, [item._id]: width / height }));
+        },
+        () => {
+          // Fallback to square if error
+          setAspectRatios((prev) => ({ ...prev, [item._id]: 1 }));
+        }
+      );
+    });
+  }, [items]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchData();
@@ -81,38 +103,33 @@ export default function PublicProfileScreen() {
   const columnWidth = (width - padding * 2 - gap) / 2;
 
   const renderGridItem = (item: Item) => {
-    // Pseudo-random height matching Explore page logic
-    const hash = item._id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const height = 180 + (hash % 140);
-
     return (
-      <Pressable
+      <MasonryImage
         key={item._id}
+        uri={item.imageUrls?.[0] || "https://via.placeholder.com/300x400?text=No+Image"}
+        columnWidth={columnWidth}
         onPress={() => router.push(`/item/${item._id}`)}
-        style={{
-          height,
-          marginBottom: gap,
-          borderRadius: 16,
-          backgroundColor: "#C4DBC4",
-          overflow: "hidden",
-          borderWidth: 1,
-          borderColor: Colors.border || "#e5e7eb",
-        }}
-      >
-        <Image
-          source={{ uri: item.imageUrls?.[0] || "https://via.placeholder.com/300x400?text=No+Image" }}
-          style={{ width: "100%", height: "100%" }}
-          resizeMode="cover"
-        />
-      </Pressable>
+      />
     );
   };
 
+  // Split items into 2 columns using a "greedy" balancing algorithm
   const leftColumn: Item[] = [];
   const rightColumn: Item[] = [];
-  items.forEach((item, index) => {
-    if (index % 2 === 0) leftColumn.push(item);
-    else rightColumn.push(item);
+  let leftHeight = 0;
+  let rightHeight = 0;
+
+  items.forEach((item) => {
+    const ratio = aspectRatios[item._id] || 1;
+    const heightWeight = 1 / ratio;
+
+    if (leftHeight <= rightHeight) {
+      leftColumn.push(item);
+      leftHeight += heightWeight;
+    } else {
+      rightColumn.push(item);
+      rightHeight += heightWeight;
+    }
   });
 
   if (loading && !refreshing && !user) {
@@ -274,7 +291,7 @@ export default function PublicProfileScreen() {
         </View>
 
         {/* Grid Content */}
-        <View style={{ padding: padding, flexDirection: "row", gap: gap, width: "100%" }}>
+        <View style={{ padding: padding, flexDirection: "row", gap: gap }}>
           {items.length === 0 ? (
             <View style={{ flex: 1, alignItems: "center", paddingTop: 60 }}>
               <View
