@@ -2,7 +2,7 @@ import api from "./api";
 import { Item } from "../types";
 
 export const itemsService = {
-  getAll: async (params?: Record<string, string>): Promise<Item[]> => {
+  getAll: async (params?: { category?: string; size?: string; condition?: string; search?: string; userId?: string; status?: string }): Promise<Item[]> => {
     const { data } = await api.get<Item[]>("/items", { params });
     return data;
   },

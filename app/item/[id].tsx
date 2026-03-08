@@ -332,7 +332,7 @@ export default function ItemDetailScreen() {
         ) : null}
 
         {/* Bottom spacing for scroll */}
-        <View className="h-24" />
+        <View className="h-48" />
       </ScrollView>
 
       {/* Docked Message Button */}

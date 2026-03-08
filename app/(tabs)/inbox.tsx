@@ -17,7 +17,7 @@ const SECTIONS = [
 
 export default function InboxScreen() {
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
+    <View style={{ flex: 1, backgroundColor: Colors.background, paddingTop: 15 }}>
       <SectionList
         sections={SECTIONS}
         keyExtractor={(item, index) => item + index}
@@ -51,7 +51,7 @@ export default function InboxScreen() {
             </View>
           ) : null
         }
-        contentContainerStyle={{ paddingTop: 8 }}
+        contentContainerStyle={{ paddingTop: 60 }}
       />
     </View>
   );

@@ -72,6 +72,7 @@ export default function TabsLayout() {
         name="post"
         options={{
           title: "Post",
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="add-circle-outline" size={size} color={color} />
           ),
@@ -81,6 +82,7 @@ export default function TabsLayout() {
         name="inbox"
         options={{
           title: "Inbox",
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="mail-outline" size={size} color={color} />
           ),
