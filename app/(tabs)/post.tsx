@@ -104,6 +104,24 @@ export default function PostScreen() {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
+  const handleSetMain = useCallback((index: number) => {
+    setPhotos((prev) => {
+      const next = [...prev];
+      const [picked] = next.splice(index, 1);
+      next.unshift(picked);
+      return next;
+    });
+  }, []);
+
+  const handleReorder = useCallback((from: number, to: number) => {
+    setPhotos((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  }, []);
+
   const handleCropPhoto = useCallback((index: number) => {
     setCropIndex(index);
   }, []);
@@ -171,18 +189,29 @@ export default function PostScreen() {
   }, []);
 
   return (
-    <View style={styles.screen}>
-      {/* 1. Permanent beige ground footer at the absolute bottom */}
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: 110,
-          backgroundColor: Colors.background
-        }}
-      />
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={90}
+    >
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
+        <Text style={styles.heading}>New Post</Text>
+
+        {/* 1. Photos */}
+        <PhotoStrip
+          photos={photos}
+          onAddPhotos={handleAddPhotos}
+          onDeletePhoto={handleDeletePhoto}
+          onCropPhoto={handleCropPhoto}
+          onSetMain={handleSetMain}
+          onReorder={handleReorder}
+        />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -334,9 +363,9 @@ const styles = StyleSheet.create({
     fontFamily: "Quicksand_400Regular",
   },
   textInput: {
-    backgroundColor: Colors.surface,
+    backgroundColor: "#FFF1DA",
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: "#E5E7EB",
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 12,
