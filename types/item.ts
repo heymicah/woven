@@ -43,7 +43,6 @@ export enum IntendedFit {
 
 export enum ItemStatus {
   AVAILABLE = "available",
-  CLAIMED = "claimed",
   COMPLETED = "completed",
 }
 
@@ -59,7 +58,7 @@ export interface Item {
   tokenCost: number;
   status: ItemStatus;
   postedBy: string;
-  claimedBy?: string;
+  receivedBy?: string;
   createdAt: string;
   updatedAt: string;
 }

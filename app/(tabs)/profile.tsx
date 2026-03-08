@@ -25,23 +25,23 @@ const TABS: { key: ProfileTab; label: string }[] = [
 ];
 
 export default function ProfileScreen() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const [activeTab, setActiveTab] = useState<ProfileTab>("current");
   const [myItems, setMyItems] = useState<Item[]>([]);
-  const [claimedItems, setClaimedItems] = useState<Item[]>([]);
+  const [receivedItems, setReceivedItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
-      const [mine, claimed] = await Promise.all([
+      const [mine, received] = await Promise.all([
         itemsService.getMine(),
-        itemsService.getClaimed(),
+        itemsService.getReceived(),
       ]);
       setMyItems(mine);
-      setClaimedItems(claimed);
+      setReceivedItems(received);
     } catch (error) {
       console.error("Failed to fetch profile data:", error);
     }
@@ -54,6 +54,8 @@ export default function ProfileScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    // Refresh user in background without awaiting to avoid re-render during gesture
+    refreshUser();
     await fetchData();
     setRefreshing(false);
   }, [fetchData]);
@@ -68,9 +70,9 @@ export default function ProfileScreen() {
       case "past":
         return pastItems;
       case "received":
-        return claimedItems;
+        return receivedItems;
       case "received":
-        return claimedItems;
+        return receivedItems;
       default:
         return [];
     }
@@ -226,16 +228,21 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
 
-          {/* Settings Gear — top-right, no background */}
-          <Pressable
-            onPress={() => router.push("/settings")}
-            style={{
-              padding: 4,
-              marginTop: -2,
-            }}
-          >
-            <Ionicons name="settings-outline" size={24} color={Colors.textSecondary} />
-          </Pressable>
+          {/* Top-right icons */}
+          <View style={{ flexDirection: "column", alignItems: "center", gap: 12, marginTop: -2 }}>
+            <Pressable
+              onPress={() => router.push("/transfer/qr-scan")}
+              style={{ padding: 4 }}
+            >
+              <Ionicons name="scan-outline" size={24} color={Colors.textSecondary} />
+            </Pressable>
+            <Pressable
+              onPress={() => router.push("/settings")}
+              style={{ padding: 4 }}
+            >
+              <Ionicons name="settings-outline" size={24} color={Colors.textSecondary} />
+            </Pressable>
+          </View>
         </View>
 
         {/* ── Subtab Bar (filing cabinet style) ── */}
