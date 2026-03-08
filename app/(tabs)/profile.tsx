@@ -56,7 +56,7 @@ const DRAWER_HEIGHT = 400;
 export default function ProfileScreen() {
   const { user } = useAuth();
   const router = useRouter();
-  const { width } = useWindowDimensions();
+  const { width, height: screenHeight } = useWindowDimensions();
   const [activeTab, setActiveTab] = useState<ProfileTab>("current");
   const [myItems, setMyItems] = useState<Item[]>([]);
   const [claimedItems, setClaimedItems] = useState<Item[]>([]);
@@ -166,6 +166,7 @@ export default function ProfileScreen() {
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView
         ref={scrollRef}
+        contentOffset={{ x: 0, y: DRAWER_HEIGHT }}
         onContentSizeChange={handleContentSizeChange}
         onScrollEndDrag={handleScrollEndDrag}
         onMomentumScrollEnd={handleMomentumEnd}
@@ -184,6 +185,9 @@ export default function ProfileScreen() {
             resizeMode="contain"
           />
         </View>
+
+        {/* Wrapper — minHeight ensures ScrollView can always scroll past the drawer */}
+        <View style={{ minHeight: screenHeight }}>
 
         {/* ── Profile Header ── */}
         <View
@@ -448,6 +452,7 @@ export default function ProfileScreen() {
               );
             })()
           )}
+        </View>
         </View>
       </ScrollView >
     </View >

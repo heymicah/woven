@@ -12,7 +12,7 @@ import {
   NativeScrollEvent,
   Platform,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../../constants/Colors";
 import { Item } from "../../types";
@@ -56,6 +56,16 @@ export default function ExploreScreen() {
     fetchItems();
   }, [fetchItems]);
 
+  // Snap drawer closed when screen regains focus (e.g. after posting)
+  useFocusEffect(
+    useCallback(() => {
+      const timer = setTimeout(() => {
+        scrollRef.current?.scrollTo({ y: DRAWER_HEIGHT, animated: false });
+      }, 100);
+      return () => clearTimeout(timer);
+    }, [])
+  );
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchItems().then(() => {
@@ -84,7 +94,7 @@ export default function ExploreScreen() {
     }
   });
 
-  const { width } = useWindowDimensions();
+  const { width, height: screenHeight } = useWindowDimensions();
   const gap = 12;
   const padding = 16;
   const columnWidth = (width - padding * 2 - gap) / 2;
@@ -105,9 +115,9 @@ export default function ExploreScreen() {
     );
   };
 
-  // Scroll past the drawer on first layout
-  const handleContentSizeChange = useCallback(() => {
-    if (!hasScrolledToStart.current) {
+  // Scroll past the drawer on first layout — use contentOffset for instant hide
+  const handleContentSizeChange = useCallback((_w: number, h: number) => {
+    if (!hasScrolledToStart.current && h > DRAWER_HEIGHT) {
       scrollRef.current?.scrollTo({ y: DRAWER_HEIGHT, animated: false });
       hasScrolledToStart.current = true;
     }
@@ -136,6 +146,7 @@ export default function ExploreScreen() {
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView
         ref={scrollRef}
+        contentOffset={{ x: 0, y: DRAWER_HEIGHT }}
         contentContainerStyle={{ paddingHorizontal: padding, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         onContentSizeChange={handleContentSizeChange}
@@ -156,8 +167,8 @@ export default function ExploreScreen() {
           />
         </View>
 
-        {/* Main content */}
-        <View style={{ paddingTop: insets.top + 16 }}>
+        {/* Main content — minHeight ensures ScrollView can always scroll past the drawer */}
+        <View style={{ paddingTop: insets.top + 16, minHeight: screenHeight }}>
           {loading ? (
             <View style={{ alignItems: "center", paddingTop: 60 }}>
               <ActivityIndicator size="large" color={Colors.primary} />
