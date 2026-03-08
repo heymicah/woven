@@ -455,8 +455,23 @@ export default function ItemDetailScreen() {
         <View className="h-48" />
       </ScrollView>
 
-      {/* Docked Message Button */}
-      {postedBy && user?._id !== postedBy._id && (
+      {/* Docked Bottom Button */}
+      {postedBy && user?._id === postedBy._id && item.status === "available" && (
+        <SafeAreaView edges={["bottom"]} style={{ backgroundColor: Palette.cream }}>
+          <View className="px-4 pb-4">
+            <Pressable
+              onPress={() => router.push(`/transfer/qr-generate?itemId=${item._id}`)}
+              className="rounded-full py-4 items-center"
+              style={{ backgroundColor: Palette.green }}
+            >
+              <Text className="font-semibold text-base" style={{ color: Palette.dark, fontFamily: "Quicksand_600SemiBold" }}>
+                Start Transfer
+              </Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      )}
+      {postedBy && user?._id !== postedBy._id && item.status === "available" && (
         <SafeAreaView edges={["bottom"]} style={{ backgroundColor: Palette.cream }}>
           <View className="px-4 pb-4">
             <Pressable
@@ -478,6 +493,17 @@ export default function ItemDetailScreen() {
                 Message
               </ThemedText>
             </Pressable>
+          </View>
+        </SafeAreaView>
+      )}
+      {item.status === "completed" && (
+        <SafeAreaView edges={["bottom"]} style={{ backgroundColor: Palette.cream }}>
+          <View className="px-4 pb-4">
+            <View className="rounded-full py-4 items-center" style={{ backgroundColor: Palette.brown, opacity: 0.6 }}>
+              <Text className="font-semibold text-base" style={{ color: "#fff", fontFamily: "Quicksand_600SemiBold" }}>
+                No Longer Available
+              </Text>
+            </View>
           </View>
         </SafeAreaView>
       )}

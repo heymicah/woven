@@ -1,6 +1,6 @@
 export enum TransactionType {
   POST_REWARD = "post_reward",
-  CLAIM_COST = "claim_cost",
+  TRANSFER_COMPLETE = "transfer_complete",
 }
 
 export interface Transaction {

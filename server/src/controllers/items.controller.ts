@@ -5,7 +5,7 @@ import { Transaction } from "../models/Transaction";
 import mongoose from "mongoose";
 import { AuthRequest, ItemStatus, TransactionType } from "../types";
 
-const CLAIM_COST = 1;
+const POST_REWARD = 1;
 
 export async function getItems(req: Request, res: Response): Promise<void> {
   try {
@@ -51,10 +51,9 @@ export async function getItems(req: Request, res: Response): Promise<void> {
 
 export async function getItem(req: Request, res: Response): Promise<void> {
   try {
-    const item = await Item.findById(req.params.id).populate(
-      "postedBy",
-      "username avatarUrl"
-    );
+    const item = await Item.findById(req.params.id)
+      .populate("postedBy", "username avatarUrl")
+      .populate("receivedBy", "username avatarUrl");
     if (!item) {
       res.status(404).json({ message: "Item not found" });
       return;
@@ -88,55 +87,6 @@ export async function createItem(
       console.error("[createItem] Validation details:", JSON.stringify(error.errors, null, 2));
     }
     res.status(500).json({ message: "Server error", error: error.message });
-  }
-}
-
-export async function claimItem(
-  req: AuthRequest,
-  res: Response
-): Promise<void> {
-  try {
-    const item = await Item.findById(req.params.id);
-    if (!item) {
-      res.status(404).json({ message: "Item not found" });
-      return;
-    }
-
-    if (item.status !== ItemStatus.AVAILABLE) {
-      res.status(400).json({ message: "Item is not available" });
-      return;
-    }
-
-    if (item.postedBy.toString() === req.userId) {
-      res.status(400).json({ message: "Cannot claim your own item" });
-      return;
-    }
-
-    const user = await User.findById(req.userId);
-    if (!user || user.tokenBalance < CLAIM_COST) {
-      res.status(400).json({ message: "Insufficient token balance" });
-      return;
-    }
-
-    // Deduct tokens and claim item
-    user.tokenBalance -= CLAIM_COST;
-    await user.save();
-
-    item.status = ItemStatus.CLAIMED;
-    item.claimedBy = user._id as any;
-    await item.save();
-
-    // Record transaction
-    await Transaction.create({
-      userId: req.userId,
-      itemId: item._id,
-      type: TransactionType.CLAIM_COST,
-      tokenAmount: -CLAIM_COST,
-    });
-
-    res.json(item);
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
   }
 }
 
@@ -203,7 +153,7 @@ export async function getMyItems(
 ): Promise<void> {
   try {
     const items = await Item.find({ postedBy: req.userId })
-      .populate("claimedBy", "username avatarUrl")
+      .populate("receivedBy", "username avatarUrl")
       .sort({ createdAt: -1 });
     res.json(items);
   } catch (error) {
@@ -211,12 +161,90 @@ export async function getMyItems(
   }
 }
 
-export async function getClaimedItems(
+export async function completeTransfer(
   req: AuthRequest,
   res: Response
 ): Promise<void> {
   try {
-    const items = await Item.find({ claimedBy: req.userId })
+    const item = await Item.findById(req.params.id);
+    if (!item) {
+      res.status(404).json({ message: "Item not found" });
+      return;
+    }
+
+    if (item.status !== ItemStatus.AVAILABLE) {
+      res.status(400).json({ message: "Item is not available" });
+      return;
+    }
+
+    const { sellerId } = req.body;
+    if (item.postedBy.toString() !== sellerId) {
+      res.status(400).json({ message: "Seller ID does not match item poster" });
+      return;
+    }
+
+    if (req.userId === sellerId) {
+      res.status(400).json({ message: "Cannot transfer to yourself" });
+      return;
+    }
+
+    // Check buyer has enough tokens
+    const buyer = await User.findById(req.userId);
+    if (!buyer || buyer.tokenBalance < 1) {
+      res.status(400).json({ message: "Insufficient token balance" });
+      return;
+    }
+
+    // Deduct token from buyer
+    buyer.tokenBalance -= 1;
+    await buyer.save();
+
+    // Transition item to COMPLETED and record buyer
+    item.status = ItemStatus.COMPLETED;
+    item.receivedBy = new mongoose.Types.ObjectId(req.userId!) as any;
+    await item.save();
+
+    // Award seller 1 token
+    const seller = await User.findById(sellerId);
+    if (seller) {
+      seller.tokenBalance += POST_REWARD;
+      await seller.save();
+    }
+
+    // Record transactions for both parties
+    await Transaction.create([
+      {
+        userId: sellerId,
+        itemId: item._id,
+        type: TransactionType.TRANSFER_COMPLETE,
+        tokenAmount: POST_REWARD,
+      },
+      {
+        userId: req.userId,
+        itemId: item._id,
+        type: TransactionType.TRANSFER_COMPLETE,
+        tokenAmount: -1,
+      },
+    ]);
+
+    // Return populated item
+    const populatedItem = await Item.findById(item._id)
+      .populate("postedBy", "username avatarUrl")
+      .populate("receivedBy", "username avatarUrl");
+
+    res.json(populatedItem);
+  } catch (error: any) {
+    console.error("[completeTransfer] ERROR:", error.message, error.stack);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function getReceivedItems(
+  req: AuthRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const items = await Item.find({ receivedBy: req.userId })
       .populate("postedBy", "username avatarUrl")
       .sort({ updatedAt: -1 });
     res.json(items);

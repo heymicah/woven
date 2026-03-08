@@ -17,8 +17,8 @@ export const itemsService = {
     return data;
   },
 
-  getClaimed: async (): Promise<Item[]> => {
-    const { data } = await api.get<Item[]>("/items/claimed");
+  getReceived: async (): Promise<Item[]> => {
+    const { data } = await api.get<Item[]>("/items/received");
     return data;
   },
 
@@ -29,11 +29,6 @@ export const itemsService = {
 
   create: async (item: Partial<Item>): Promise<Item> => {
     const { data } = await api.post<Item>("/items", item);
-    return data;
-  },
-
-  claim: async (id: string): Promise<Item> => {
-    const { data } = await api.post<Item>(`/items/${id}/claim`);
     return data;
   },
 
@@ -49,5 +44,10 @@ export const itemsService = {
 
   delete: async (id: string): Promise<void> => {
     await api.delete(`/items/${id}`);
+  },
+
+  complete: async (id: string, sellerId: string): Promise<Item> => {
+    const { data } = await api.post<Item>(`/items/${id}/complete`, { sellerId });
+    return data;
   },
 };

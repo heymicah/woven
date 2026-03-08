@@ -29,12 +29,12 @@ const TABS: { key: ProfileTab; label: string }[] = [
 ];
 
 export default function ProfileScreen() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const [activeTab, setActiveTab] = useState<ProfileTab>("current");
   const [myItems, setMyItems] = useState<Item[]>([]);
-  const [claimedItems, setClaimedItems] = useState<Item[]>([]);
+  const [receivedItems, setReceivedItems] = useState<Item[]>([]);
   const [likedItems, setLikedItems] = useState<Item[]>([]);
   const [aspectRatios, setAspectRatios] = useState<{ [key: string]: number }>({});
   const [loading, setLoading] = useState(false);
@@ -42,17 +42,17 @@ export default function ProfileScreen() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [mine, claimed, liked] = await Promise.all([
+      const [mine, received, liked] = await Promise.all([
         itemsService.getMine(),
-        itemsService.getClaimed(),
+        itemsService.getReceived(),
         itemsService.getLiked(),
       ]);
       setMyItems(mine);
-      setClaimedItems(claimed);
+      setReceivedItems(received);
       setLikedItems(liked);
 
       // Batch fetch aspect ratios to prevent glitching
-      const allItems = [...mine, ...claimed, ...liked];
+      const allItems = [...mine, ...received, ...liked];
       const uris = allItems.map(i => i.imageUrls?.[0]).filter((u): u is string => !!u);
       const ratiosMap = await fetchAspectRatiosBatch(uris);
       setAspectRatios(prev => ({ ...prev, ...ratiosMap }));
@@ -69,6 +69,8 @@ export default function ProfileScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    // Refresh user in background without awaiting to avoid re-render during gesture
+    refreshUser();
     await fetchData();
     setRefreshing(false);
   }, [fetchData]);
@@ -83,7 +85,7 @@ export default function ProfileScreen() {
       case "past":
         return pastItems;
       case "received":
-        return claimedItems;
+        return receivedItems;
       case "liked":
         return likedItems;
       default:
@@ -243,16 +245,21 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
 
-          {/* Settings Gear — top-right, no background */}
-          <Pressable
-            onPress={() => router.push("/settings")}
-            style={{
-              padding: 4,
-              marginTop: -2,
-            }}
-          >
-            <Ionicons name="settings-outline" size={24} color={Colors.textSecondary} />
-          </Pressable>
+          {/* Top-right icons */}
+          <View style={{ flexDirection: "column", alignItems: "center", gap: 12, marginTop: -2 }}>
+            <Pressable
+              onPress={() => router.push("/transfer/qr-scan")}
+              style={{ padding: 4 }}
+            >
+              <Ionicons name="scan-outline" size={24} color={Colors.textSecondary} />
+            </Pressable>
+            <Pressable
+              onPress={() => router.push("/settings")}
+              style={{ padding: 4 }}
+            >
+              <Ionicons name="settings-outline" size={24} color={Colors.textSecondary} />
+            </Pressable>
+          </View>
         </View>
 
         {/* ── Subtab Bar (filing cabinet style) ── */}

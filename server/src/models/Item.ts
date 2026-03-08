@@ -12,7 +12,7 @@ export interface IItem extends Document {
   tokenCost: number;
   status: ItemStatus;
   postedBy: mongoose.Types.ObjectId;
-  claimedBy?: mongoose.Types.ObjectId;
+  receivedBy?: mongoose.Types.ObjectId;
 }
 
 const itemSchema = new Schema<IItem>(
@@ -49,7 +49,7 @@ const itemSchema = new Schema<IItem>(
       ref: "User",
       required: true,
     },
-    claimedBy: {
+    receivedBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
     },

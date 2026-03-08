@@ -10,6 +10,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../../constants/Colors";
 import { Item } from "../../types";
 import { itemsService } from "../../services/items.service";
@@ -18,6 +19,7 @@ import { fetchAspectRatiosBatch } from "../../utils/image";
 
 export default function ExploreScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [items, setItems] = useState<Item[]>([]);
   const [aspectRatios, setAspectRatios] = useState<{ [key: string]: number }>({});
   const [loading, setLoading] = useState(true);
@@ -95,7 +97,7 @@ export default function ExploreScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView
-        contentContainerStyle={{ padding, paddingTop: 90, paddingBottom: 100 }}
+        contentContainerStyle={{ padding, paddingTop: insets.top + 16, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
