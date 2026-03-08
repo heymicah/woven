@@ -1,5 +1,5 @@
 import { Server as HttpServer } from "http";
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 import jwt from "jsonwebtoken";
 
 let io: Server;
@@ -11,7 +11,7 @@ export function setupSocket(httpServer: HttpServer): Server {
     },
   });
 
-  io.use((socket, next) => {
+  io.use((socket: Socket, next: (err?: Error) => void) => {
     const token = socket.handshake.auth.token;
     if (!token) {
       return next(new Error("No token provided"));
@@ -29,7 +29,7 @@ export function setupSocket(httpServer: HttpServer): Server {
     }
   });
 
-  io.on("connection", (socket) => {
+  io.on("connection", (socket: Socket) => {
     const userId = socket.data.userId;
     socket.join(userId);
     console.log(`User ${userId} connected to socket`);

@@ -63,40 +63,47 @@ function CornerHandle({
   onChange: (rect: CropRect) => void;
 }) {
   const last = useRef({ x: cropRect.x, y: cropRect.y, w: cropRect.w, h: cropRect.h });
+  const cropRectRef = useRef(cropRect);
+  const onChangeRef = useRef(onChange);
+  const imgLayoutRef = useRef(imgLayout);
+  cropRectRef.current = cropRect;
+  onChangeRef.current = onChange;
+  imgLayoutRef.current = imgLayout;
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
-        last.current = { ...cropRect };
+        last.current = { ...cropRectRef.current };
       },
       onPanResponderMove: (_, gs) => {
         const { dx, dy } = gs;
         let { x, y, w, h } = last.current;
+        const il = imgLayoutRef.current;
 
-        const imgRight = imgLayout.x + imgLayout.w;
-        const imgBottom = imgLayout.y + imgLayout.h;
+        const imgRight = il.x + il.w;
+        const imgBottom = il.y + il.h;
 
         if (corner === "tl") {
-          const newX = Math.max(imgLayout.x, Math.min(x + dx, x + w - MIN_SIZE));
-          const newY = Math.max(imgLayout.y, Math.min(y + dy, y + h - MIN_SIZE));
-          onChange({ x: newX, y: newY, w: w + (x - newX), h: h + (y - newY) });
+          const newX = Math.max(il.x, Math.min(x + dx, x + w - MIN_SIZE));
+          const newY = Math.max(il.y, Math.min(y + dy, y + h - MIN_SIZE));
+          onChangeRef.current({ x: newX, y: newY, w: w + (x - newX), h: h + (y - newY) });
         } else if (corner === "tr") {
           const newW = Math.max(MIN_SIZE, Math.min(w + dx, imgRight - x));
-          const newY = Math.max(imgLayout.y, Math.min(y + dy, y + h - MIN_SIZE));
-          onChange({ x, y: newY, w: newW, h: h + (y - newY) });
+          const newY = Math.max(il.y, Math.min(y + dy, y + h - MIN_SIZE));
+          onChangeRef.current({ x, y: newY, w: newW, h: h + (y - newY) });
         } else if (corner === "bl") {
-          const newX = Math.max(imgLayout.x, Math.min(x + dx, x + w - MIN_SIZE));
+          const newX = Math.max(il.x, Math.min(x + dx, x + w - MIN_SIZE));
           const newH = Math.max(MIN_SIZE, Math.min(h + dy, imgBottom - y));
-          onChange({ x: newX, y, w: w + (x - newX), h: newH });
+          onChangeRef.current({ x: newX, y, w: w + (x - newX), h: newH });
         } else {
           const newW = Math.max(MIN_SIZE, Math.min(w + dx, imgRight - x));
           const newH = Math.max(MIN_SIZE, Math.min(h + dy, imgBottom - y));
-          onChange({ x, y, w: newW, h: newH });
+          onChangeRef.current({ x, y, w: newW, h: newH });
         }
       },
       onPanResponderRelease: () => {
-        last.current = { ...cropRect };
+        last.current = { ...cropRectRef.current };
       },
     })
   ).current;
