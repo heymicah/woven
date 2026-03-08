@@ -9,7 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { NativeViewGestureHandler } from "react-native-gesture-handler";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { Colors } from "../../constants/Colors";
