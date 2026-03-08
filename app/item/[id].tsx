@@ -21,6 +21,7 @@ import { Colors } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { messagesService } from "../../services/messages.service";
 import { itemsService } from "../../services/items.service";
+import { reviewsService } from "../../services/reviews.service";
 import { Item, User } from "../../types";
 
 // Palette: #FFD1D9, #E28D9B, #FAE5C4, #96755F, #411E12
@@ -84,6 +85,8 @@ export default function ItemDetailScreen() {
   const [isLiking, setIsLiking] = useState(false);
   const [carouselWidth, setCarouselWidth] = useState(0);
   const [fullscreenVisible, setFullscreenVisible] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [sellerRating, setSellerRating] = useState<number | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
 
@@ -98,6 +101,18 @@ export default function ItemDetailScreen() {
         setItem(data);
         if (user?.likedItems?.includes(id)) {
           setIsLiked(true);
+        }
+        if (data.status === "completed") {
+          reviewsService.checkExists(id).then(setHasReviewed).catch(() => { });
+        }
+        // Fetch seller rating
+        const seller = typeof data.postedBy === "object" && data.postedBy !== null
+          ? (data.postedBy as { _id: string })._id
+          : null;
+        if (seller) {
+          reviewsService.getForUser(seller)
+            .then(res => setSellerRating(res.avgRating))
+            .catch(() => { });
         }
       })
       .catch(() => setError("Could not load item"))
@@ -205,6 +220,10 @@ export default function ItemDetailScreen() {
   const postedBy = typeof item.postedBy === "object" && item.postedBy !== null
     ? item.postedBy as { _id: string; username: string; avatarUrl?: string }
     : null;
+  const receivedBy = typeof item.receivedBy === "object" && item.receivedBy !== null
+    ? item.receivedBy as { _id: string; username: string }
+    : null;
+  const isParticipant = (postedBy && user?._id === postedBy._id) || (receivedBy && user?._id === receivedBy._id);
   const tags = [
     item.intendedFit ? item.intendedFit.charAt(0).toUpperCase() + item.intendedFit.slice(1) : null,
     item.size ? `Size ${item.size}` : null,
@@ -437,6 +456,14 @@ export default function ItemDetailScreen() {
             <ThemedText variant="medium" style={{ fontSize: 14, color: Palette.dark, marginLeft: 8 }}>
               {postedBy.username}
             </ThemedText>
+            {sellerRating !== null && (
+              <View style={{ flexDirection: "row", alignItems: "center", marginLeft: 8 }}>
+                <Ionicons name="star" size={13} color={Colors.primary} />
+                <ThemedText style={{ fontSize: 13, color: Palette.brown, marginLeft: 3 }}>
+                  {sellerRating > 0 ? sellerRating.toFixed(1) : "New"}
+                </ThemedText>
+              </View>
+            )}
             <View className="flex-1" />
             <Ionicons name="chevron-forward" size={16} color={Palette.brown} />
           </Pressable>
@@ -492,14 +519,42 @@ export default function ItemDetailScreen() {
           </Pressable>
         </View>
       )}
-      {item.status === "completed" && (
-        <View style={{ position: "absolute", bottom: 40, left: 0, right: 0, paddingHorizontal: 16 }}>
-          <View className="rounded-full py-4 items-center" style={{ backgroundColor: Palette.brown, opacity: 0.6 }}>
-            <Text className="font-semibold text-base" style={{ color: "#fff", fontFamily: "Quicksand_600SemiBold" }}>
-              No Longer Available
-            </Text>
+      {item.status === "completed" && isParticipant && !hasReviewed && (
+        <SafeAreaView edges={["bottom"]} style={{ backgroundColor: Palette.cream }}>
+          <View className="px-4 pb-4">
+            <Pressable
+              onPress={() => router.push(`/review/${item._id}`)}
+              className="rounded-full py-4 items-center"
+              style={{ backgroundColor: Palette.green }}
+            >
+              <Text className="font-semibold text-base" style={{ color: Palette.dark, fontFamily: "Quicksand_600SemiBold" }}>
+                Leave a Review
+              </Text>
+            </Pressable>
           </View>
-        </View>
+        </SafeAreaView>
+      )}
+      {item.status === "completed" && isParticipant && hasReviewed && (
+        <SafeAreaView edges={["bottom"]} style={{ backgroundColor: Palette.cream }}>
+          <View className="px-4 pb-4">
+            <View className="rounded-full py-4 items-center" style={{ backgroundColor: Palette.brown, opacity: 0.6 }}>
+              <Text className="font-semibold text-base" style={{ color: "#fff", fontFamily: "Quicksand_600SemiBold" }}>
+                Already Reviewed
+              </Text>
+            </View>
+          </View>
+        </SafeAreaView>
+      )}
+      {item.status === "completed" && !isParticipant && (
+        <SafeAreaView edges={["bottom"]} style={{ backgroundColor: Palette.cream }}>
+          <View className="px-4 pb-4">
+            <View className="rounded-full py-4 items-center" style={{ backgroundColor: Palette.brown, opacity: 0.6 }}>
+              <Text className="font-semibold text-base" style={{ color: "#fff", fontFamily: "Quicksand_600SemiBold" }}>
+                No Longer Available
+              </Text>
+            </View>
+          </View>
+        </SafeAreaView>
       )}
     </View>
   );
