@@ -195,7 +195,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Wrapper — minHeight ensures ScrollView can always scroll past the drawer */}
-        <View style={{ minHeight: screenHeight }}>
+        <View style={{ minHeight: screenHeight, flexDirection: "column" }}>
 
         {/* ── Profile Header ── */}
         <View
@@ -390,6 +390,7 @@ export default function ProfileScreen() {
 
         {/* ── Tab Content (fixed window with internal scroll) ── */}
         <View style={{
+          flex: 1,
           marginHorizontal: 16,
           borderLeftWidth: 1,
           borderRightWidth: 1,
@@ -400,11 +401,16 @@ export default function ProfileScreen() {
           overflow: "hidden",
           marginBottom: 110,
           backgroundColor: "#E9D2B3",
-          paddingHorizontal: 8,
-          paddingTop: 12,
-          paddingBottom: 12,
-          minHeight: 400,
         }}>
+          <ScrollView
+            contentContainerStyle={{
+              paddingHorizontal: 8,
+              paddingTop: 12,
+              paddingBottom: 12,
+            }}
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled={true}
+          >
           {loading ? (
             <View style={{ alignItems: "center", paddingTop: 60 }}>
               <ActivityIndicator size="large" color={Colors.primary} />
@@ -472,6 +478,7 @@ export default function ProfileScreen() {
               );
             })()
           )}
+          </ScrollView>
         </View>
         </View>
       </ScrollView>
