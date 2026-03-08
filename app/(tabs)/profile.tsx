@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   RefreshControl,
   Image,
   useWindowDimensions,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "../../hooks/useAuth";
@@ -49,6 +51,8 @@ const TABS: { key: ProfileTab; label: string }[] = [
   { key: "liked", label: "Likes" },
 ];
 
+const DRAWER_HEIGHT = 400;
+
 export default function ProfileScreen() {
   const { user } = useAuth();
   const router = useRouter();
@@ -59,6 +63,8 @@ export default function ProfileScreen() {
   const [likedItems, setLikedItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const hasScrolledToStart = useRef(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -85,7 +91,42 @@ export default function ProfileScreen() {
     setRefreshing(true);
     await fetchData();
     setRefreshing(false);
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: DRAWER_HEIGHT, animated: true });
+    }, 300);
   }, [fetchData]);
+
+  const handleContentSizeChange = useCallback((_w: number, h: number) => {
+    if (!hasScrolledToStart.current) {
+      scrollRef.current?.scrollTo({ y: DRAWER_HEIGHT, animated: false });
+      hasScrolledToStart.current = true;
+    }
+  }, []);
+
+  const snapping = useRef(false);
+
+  const snapBackIfNeeded = useCallback((y: number) => {
+    if (y < DRAWER_HEIGHT && !snapping.current && !refreshing) {
+      snapping.current = true;
+      scrollRef.current?.scrollTo({ y: DRAWER_HEIGHT, animated: true });
+      setTimeout(() => { snapping.current = false; }, 500);
+    }
+  }, [refreshing]);
+
+  const handleScrollEndDrag = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    snapBackIfNeeded(e.nativeEvent.contentOffset.y);
+  }, [snapBackIfNeeded]);
+
+  const handleMomentumEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    snapBackIfNeeded(e.nativeEvent.contentOffset.y);
+  }, [snapBackIfNeeded]);
+
+  // When tab changes, ensure drawer stays hidden
+  useEffect(() => {
+    if (hasScrolledToStart.current) {
+      scrollRef.current?.scrollTo({ y: DRAWER_HEIGHT, animated: false });
+    }
+  }, [activeTab]);
 
   const currentItems = myItems.filter((i) => i.status === ItemStatus.AVAILABLE);
   const pastItems = myItems.filter((i) => i.status !== ItemStatus.AVAILABLE);
@@ -124,10 +165,26 @@ export default function ProfileScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView
+        ref={scrollRef}
+        onContentSizeChange={handleContentSizeChange}
+        onScrollEndDrag={handleScrollEndDrag}
+        onMomentumScrollEnd={handleMomentumEnd}
+        scrollEventThrottle={16}
+        bounces={false}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
         }
       >
+        {/* Drawer image — hidden above the fold, revealed on pull-down */}
+        <View style={{ height: DRAWER_HEIGHT, width: "100%", overflow: "hidden" }}>
+          <Image
+            source={require("../../assets/drawer.jpg")}
+            style={{ width: width, height: "100%" }}
+            resizeMode="contain"
+          />
+        </View>
+
         {/* ── Profile Header ── */}
         <View
           style={{
@@ -322,6 +379,7 @@ export default function ProfileScreen() {
           paddingHorizontal: 8,
           paddingTop: 12,
           paddingBottom: 12,
+          minHeight: 400,
         }}>
           {loading ? (
             <View style={{ alignItems: "center", paddingTop: 60 }}>

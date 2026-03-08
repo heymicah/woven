@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   ScrollView,
@@ -8,6 +8,9 @@ import {
   useWindowDimensions,
   ActivityIndicator,
   RefreshControl,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,6 +20,8 @@ import { itemsService } from "../../services/items.service";
 import { MasonryImage } from "../../components/MasonryImage";
 import { fetchAspectRatiosBatch } from "../../utils/image";
 
+const DRAWER_HEIGHT = 400;
+
 export default function ExploreScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -25,6 +30,8 @@ export default function ExploreScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const hasScrolledToStart = useRef(false);
 
   const fetchItems = useCallback(async () => {
     try {
@@ -51,7 +58,11 @@ export default function ExploreScreen() {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchItems();
+    fetchItems().then(() => {
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ y: DRAWER_HEIGHT, animated: true });
+      }, 300);
+    });
   }, [fetchItems]);
 
   // Split items into 2 columns using a "greedy" balancing algorithm
@@ -62,7 +73,7 @@ export default function ExploreScreen() {
 
   items.forEach((item) => {
     const ratio = aspectRatios[item._id] || 1;
-    const heightWeight = 1 / ratio; // Estimated relative height
+    const heightWeight = 1 / ratio;
 
     if (leftHeight <= rightHeight) {
       leftColumn.push(item);
@@ -94,41 +105,84 @@ export default function ExploreScreen() {
     );
   };
 
+  // Scroll past the drawer on first layout
+  const handleContentSizeChange = useCallback(() => {
+    if (!hasScrolledToStart.current) {
+      scrollRef.current?.scrollTo({ y: DRAWER_HEIGHT, animated: false });
+      hasScrolledToStart.current = true;
+    }
+  }, []);
+
+  const snapping = useRef(false);
+
+  // Snap back to hide drawer when user releases
+  const snapBackIfNeeded = useCallback((y: number) => {
+    if (y < DRAWER_HEIGHT && !snapping.current && !refreshing) {
+      snapping.current = true;
+      scrollRef.current?.scrollTo({ y: DRAWER_HEIGHT, animated: true });
+      setTimeout(() => { snapping.current = false; }, 500);
+    }
+  }, [refreshing]);
+
+  const handleScrollEndDrag = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    snapBackIfNeeded(e.nativeEvent.contentOffset.y);
+  }, [snapBackIfNeeded]);
+
+  const handleMomentumEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    snapBackIfNeeded(e.nativeEvent.contentOffset.y);
+  }, [snapBackIfNeeded]);
+
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView
-        contentContainerStyle={{ padding, paddingTop: insets.top + 16, paddingBottom: 100 }}
+        ref={scrollRef}
+        contentContainerStyle={{ paddingHorizontal: padding, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
+        onContentSizeChange={handleContentSizeChange}
+        onScrollEndDrag={handleScrollEndDrag}
+        onMomentumScrollEnd={handleMomentumEnd}
+        scrollEventThrottle={16}
+        bounces={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {loading ? (
-          <View style={{ alignItems: "center", paddingTop: 60 }}>
-            <ActivityIndicator size="large" color={Colors.primary} />
-          </View>
-        ) : error ? (
-          <View style={{ alignItems: "center", paddingTop: 60 }}>
-            <Text style={{ color: Colors.textSecondary, fontSize: 16, textAlign: "center", fontFamily: "Quicksand_400Regular" }}>
-              {error}
-            </Text>
-          </View>
-        ) : items.length === 0 ? (
-          <View style={{ alignItems: "center", paddingTop: 60 }}>
-            <Text style={{ color: Colors.textSecondary, fontSize: 16, fontFamily: "Quicksand_400Regular" }}>No items found</Text>
-          </View>
-        ) : (
-          <View style={{ flexDirection: "row", gap }}>
-            {/* Left Column */}
-            <View style={{ flex: 1 }}>
-              {leftColumn.map((item) => renderItem(item))}
+        {/* Drawer image — hidden above the fold, revealed on pull-down */}
+        <View style={{ height: DRAWER_HEIGHT, width: "100%", overflow: "hidden", marginHorizontal: -padding }}>
+          <Image
+            source={require("../../assets/drawer.jpg")}
+            style={{ width: width, height: "100%" }}
+            resizeMode="contain"
+          />
+        </View>
+
+        {/* Main content */}
+        <View style={{ paddingTop: insets.top + 16 }}>
+          {loading ? (
+            <View style={{ alignItems: "center", paddingTop: 60 }}>
+              <ActivityIndicator size="large" color={Colors.primary} />
             </View>
-            {/* Right Column */}
-            <View style={{ flex: 1 }}>
-              {rightColumn.map((item) => renderItem(item))}
+          ) : error ? (
+            <View style={{ alignItems: "center", paddingTop: 60 }}>
+              <Text style={{ color: Colors.textSecondary, fontSize: 16, textAlign: "center", fontFamily: "Quicksand_400Regular" }}>
+                {error}
+              </Text>
             </View>
-          </View>
-        )}
+          ) : items.length === 0 ? (
+            <View style={{ alignItems: "center", paddingTop: 60 }}>
+              <Text style={{ color: Colors.textSecondary, fontSize: 16, fontFamily: "Quicksand_400Regular" }}>No items found</Text>
+            </View>
+          ) : (
+            <View style={{ flexDirection: "row", gap }}>
+              <View style={{ flex: 1 }}>
+                {leftColumn.map((item) => renderItem(item))}
+              </View>
+              <View style={{ flex: 1 }}>
+                {rightColumn.map((item) => renderItem(item))}
+              </View>
+            </View>
+          )}
+        </View>
       </ScrollView>
     </View>
   );
