@@ -14,6 +14,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "../../hooks/useAuth";
 import { Colors } from "../../constants/Colors";
 import { itemsService } from "../../services/items.service";
+import { reviewsService } from "../../services/reviews.service";
 import { Item, ItemStatus } from "../../types";
 import { useRouter, useFocusEffect } from "expo-router";
 import { MasonryImage } from "../../components/MasonryImage";
@@ -37,19 +38,22 @@ export default function ProfileScreen() {
   const [receivedItems, setReceivedItems] = useState<Item[]>([]);
   const [likedItems, setLikedItems] = useState<Item[]>([]);
   const [aspectRatios, setAspectRatios] = useState<{ [key: string]: number }>({});
+  const [avgRating, setAvgRating] = useState(0);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
-      const [mine, received, liked] = await Promise.all([
+      const [mine, received, liked, reviewsData] = await Promise.all([
         itemsService.getMine(),
         itemsService.getReceived(),
         itemsService.getLiked(),
+        user?._id ? reviewsService.getForUser(user._id) : Promise.resolve({ reviews: [], avgRating: 0, totalReviews: 0 }),
       ]);
       setMyItems(mine);
       setReceivedItems(received);
       setLikedItems(liked);
+      setAvgRating(reviewsData.avgRating);
 
       // Batch fetch aspect ratios to prevent glitching
       const allItems = [...mine, ...received, ...liked];
@@ -206,8 +210,7 @@ export default function ProfileScreen() {
               style={{ flexDirection: "row", alignItems: "center", marginTop: 6 }}
             >
               {[1, 2, 3, 4, 5].map((n) => {
-                const rating = 3.5;
-                const fill = Math.min(1, Math.max(0, rating - (n - 1)));
+                const fill = Math.min(1, Math.max(0, avgRating - (n - 1)));
                 return (
                   <View key={n} style={{ width: 15, height: 15, marginRight: 1 }}>
                     <Ionicons
@@ -234,7 +237,7 @@ export default function ProfileScreen() {
                   marginLeft: 5,
                 }}
               >
-                3.5
+                {avgRating > 0 ? avgRating.toFixed(1) : "New"}
               </ThemedText>
               <Ionicons
                 name="chevron-forward"
