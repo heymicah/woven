@@ -16,6 +16,7 @@ export default function TabsLayout() {
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: '600',
+          fontFamily: 'Quicksand_600SemiBold',
         },
         tabBarLabelPosition: 'below-icon', // Force text not to wrap or squish
         tabBarActiveBackgroundColor: '#a8c9a8',
