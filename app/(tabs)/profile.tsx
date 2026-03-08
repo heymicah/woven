@@ -182,6 +182,7 @@ export default function ProfileScreen() {
                 fontSize: 22,
                 fontWeight: "700",
                 color: Colors.heading,
+                fontFamily: "Quicksand_700Bold",
               }}
             >
               {user?.username || "Username"}
@@ -192,6 +193,7 @@ export default function ProfileScreen() {
                   fontSize: 13,
                   color: Colors.textSecondary,
                   marginTop: 3,
+                  fontFamily: "Quicksand_400Regular",
                 }}
                 numberOfLines={2}
               >
@@ -202,7 +204,7 @@ export default function ProfileScreen() {
             {/* Tokens */}
             <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
               <View style={{ width: 16, height: 16, borderRadius: 8, borderWidth: 1.5, borderColor: Colors.primary, alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontSize: 9, fontWeight: "800", color: Colors.primary, marginTop: -0.5 }}>$</Text>
+                <Text style={{ fontSize: 9, fontWeight: "800", color: Colors.primary, marginTop: -0.5, fontFamily: "Quicksand_700Bold" }}>$</Text>
               </View>
               <Text
                 style={{
@@ -210,6 +212,7 @@ export default function ProfileScreen() {
                   fontWeight: "600",
                   color: Colors.text,
                   marginLeft: 5,
+                  fontFamily: "Quicksand_600SemiBold",
                 }}
               >
                 {user?.tokenBalance ?? 0}
@@ -219,6 +222,7 @@ export default function ProfileScreen() {
                   fontSize: 13,
                   color: Colors.textSecondary,
                   marginLeft: 3,
+                  fontFamily: "Quicksand_500Medium",
                 }}
               >
                 tokens
@@ -256,6 +260,7 @@ export default function ProfileScreen() {
                   fontWeight: "600",
                   color: Colors.text,
                   marginLeft: 5,
+                  fontFamily: "Quicksand_600SemiBold",
                 }}
               >
                 {avgRating > 0 ? avgRating.toFixed(1) : "New"}
@@ -317,6 +322,7 @@ export default function ProfileScreen() {
                     fontSize: 13,
                     fontWeight: isActive ? "700" : "500",
                     color: isActive ? Colors.brown.dark : Colors.textSecondary,
+                    fontFamily: isActive ? "Quicksand_700Bold" : "Quicksand_500Medium",
                   }}
                 >
                   {tab.label}
@@ -328,97 +334,97 @@ export default function ProfileScreen() {
 
       </ScrollView>
 
-        {/* ── Tab Content (fixed window with internal scroll) ── */}
-        <View style={{
-          flex: 1,
-          marginHorizontal: 16,
-          borderLeftWidth: 1,
-          borderRightWidth: 1,
-          borderBottomWidth: 1,
-          borderColor: Colors.brown.dark,
-          borderBottomLeftRadius: 12,
-          borderBottomRightRadius: 12,
-          overflow: "hidden",
-          marginBottom: 110,
-          backgroundColor: "#E9D2B3",
-        }}>
-          <ScrollView
-            contentContainerStyle={{
-              paddingHorizontal: 8,
-              paddingTop: 12,
-              paddingBottom: 12,
-            }}
-            showsVerticalScrollIndicator={false}
-          >
-            {loading ? (
-              <View style={{ alignItems: "center", paddingTop: 60 }}>
-                <ActivityIndicator size="large" color={Colors.primary} />
-              </View>
-            ) : tabData.length === 0 ? (
+      {/* ── Tab Content (fixed window with internal scroll) ── */}
+      <View style={{
+        flex: 1,
+        marginHorizontal: 16,
+        borderLeftWidth: 1,
+        borderRightWidth: 1,
+        borderBottomWidth: 1,
+        borderColor: Colors.brown.dark,
+        borderBottomLeftRadius: 12,
+        borderBottomRightRadius: 12,
+        overflow: "hidden",
+        marginBottom: 110,
+        backgroundColor: "#E9D2B3",
+      }}>
+        <ScrollView
+          contentContainerStyle={{
+            paddingHorizontal: 8,
+            paddingTop: 12,
+            paddingBottom: 12,
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          {loading ? (
+            <View style={{ alignItems: "center", paddingTop: 60 }}>
+              <ActivityIndicator size="large" color={Colors.primary} />
+            </View>
+          ) : tabData.length === 0 ? (
+            <View
+              style={{
+                alignItems: "center",
+                paddingTop: 60,
+                paddingBottom: 40,
+              }}
+            >
               <View
                 style={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: 36,
+                  backgroundColor: Colors.secondary,
                   alignItems: "center",
-                  paddingTop: 60,
-                  paddingBottom: 40,
+                  justifyContent: "center",
+                  marginBottom: 16,
                 }}
               >
-                <View
-                  style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: 36,
-                    backgroundColor: Colors.secondary,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 16,
-                  }}
-                >
-                  <Ionicons name={emptyState?.icon as any} size={32} color={Colors.primary} />
-                </View>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "600",
-                    color: Colors.textSecondary,
-                  }}
-                >
-                  {emptyState?.message}
-                </Text>
+                <Ionicons name={emptyState?.icon as any} size={32} color={Colors.primary} />
               </View>
-            ) : (
-              (() => {
-                const leftColumn: Item[] = [];
-                const rightColumn: Item[] = [];
-                tabData.forEach((item, i) => {
-                  (i % 2 === 0 ? leftColumn : rightColumn).push(item);
-                });
-                const gap = 10;
-                // 16 margin + 1 border + 8 padding per side = 50 total
-                const cardWidth = (width - 50 - gap) / 2;
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: Colors.textSecondary,
+                }}
+              >
+                {emptyState?.message}
+              </Text>
+            </View>
+          ) : (
+            (() => {
+              const leftColumn: Item[] = [];
+              const rightColumn: Item[] = [];
+              tabData.forEach((item, i) => {
+                (i % 2 === 0 ? leftColumn : rightColumn).push(item);
+              });
+              const gap = 10;
+              // 16 margin + 1 border + 8 padding per side = 50 total
+              const cardWidth = (width - 50 - gap) / 2;
 
-                const renderCard = (item: Item) => {
-                  const uri = item.imageUrls?.[0]
-                    || "https://via.placeholder.com/300x400?text=No+Image";
-                  return (
-                    <ProfileCard
-                      key={item._id}
-                      uri={uri}
-                      cardWidth={cardWidth}
-                      onPress={() => router.push(`/item/${item._id}`)}
-                    />
-                  );
-                };
-
+              const renderCard = (item: Item) => {
+                const uri = item.imageUrls?.[0]
+                  || "https://via.placeholder.com/300x400?text=No+Image";
                 return (
-                  <View style={{ flexDirection: "row", gap }}>
-                    <View style={{ width: cardWidth }}>{leftColumn.map(renderCard)}</View>
-                    <View style={{ width: cardWidth }}>{rightColumn.map(renderCard)}</View>
-                  </View>
+                  <ProfileCard
+                    key={item._id}
+                    uri={uri}
+                    cardWidth={cardWidth}
+                    onPress={() => router.push(`/item/${item._id}`)}
+                  />
                 );
-              })()
-            )}
-          </ScrollView>
-        </View>
+              };
+
+              return (
+                <View style={{ flexDirection: "row", gap }}>
+                  <View style={{ width: cardWidth }}>{leftColumn.map(renderCard)}</View>
+                  <View style={{ width: cardWidth }}>{rightColumn.map(renderCard)}</View>
+                </View>
+              );
+            })()
+          )}
+        </ScrollView>
+      </View>
     </View >
   );
 }

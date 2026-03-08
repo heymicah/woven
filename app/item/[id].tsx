@@ -119,7 +119,7 @@ export default function ItemDetailScreen() {
         data.imageUrls?.forEach((uri: string, index: number) => {
           Image.getSize(uri, (w, h) => {
             if (w && h) setImageAspectRatios(prev => ({ ...prev, [index]: w / h }));
-          }, () => {});
+          }, () => { });
         });
       })
       .catch(() => setError("Could not load item"))
@@ -470,9 +470,9 @@ export default function ItemDetailScreen() {
             <View
               key={tag}
               className="rounded-full px-3 py-1"
-              style={{ backgroundColor: Palette.brown }}
+              style={{ backgroundColor: "#FFF1DA" }}
             >
-              <ThemedText variant="semibold" style={{ fontSize: 12, color: "#FFFFFF" }}>
+              <ThemedText variant="semibold" style={{ fontSize: 12, color: Palette.dark }}>
                 {tag}
               </ThemedText>
             </View>
