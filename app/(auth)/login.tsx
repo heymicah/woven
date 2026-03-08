@@ -36,61 +36,61 @@ export default function LoginScreen() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-    <View style={styles.screen}>
-      <View style={styles.form}>
-        <Text className="text-4xl font-bold text-center text-[#411E12] mb-2">
-          Woven
-        </Text>
-        <Text className="text-base text-center text-gray-500 mb-10">
-          Community clothing upcycling
-        </Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#96755F"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          returnKeyType="next"
-          onSubmitEditing={() => passwordRef.current?.focus()}
-          blurOnSubmit={false}
-        />
-        <TextInput
-          ref={passwordRef}
-          style={[styles.input, { marginBottom: 24 }]}
-          placeholder="Password"
-          placeholderTextColor="#96755F"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          returnKeyType="go"
-          onSubmitEditing={handleLogin}
-        />
-
-        <Pressable
-          onPress={handleLogin}
-          disabled={loading}
-          className="bg-[#A8C9A8] rounded-full py-4 items-center"
-          style={({ pressed }) => pressed && { opacity: 0.8 }}
-        >
-          <Text className="text-[#411E12] font-semibold text-base">
-            {loading ? "Signing in..." : "Sign In"}
+      <View style={styles.screen}>
+        <View style={styles.form}>
+          <Text className="text-4xl font-bold text-center text-[#411E12] mb-2">
+            Woven
           </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => router.push("/(auth)/register")}
-          className="mt-6 items-center"
-        >
-          <Text className="text-gray-500">
-            Don't have an account?{" "}
-            <Text className="text-[#411E12] font-semibold">Sign Up</Text>
+          <Text className="text-base text-center text-gray-500 mb-10">
+            Community clothing upcycling
           </Text>
-        </Pressable>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#96755F"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            returnKeyType="next"
+            onSubmitEditing={() => passwordRef.current?.focus()}
+            blurOnSubmit={false}
+          />
+          <TextInput
+            ref={passwordRef}
+            style={[styles.input, { marginBottom: 24 }]}
+            placeholder="Password"
+            placeholderTextColor="#96755F"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            returnKeyType="go"
+            onSubmitEditing={handleLogin}
+          />
+
+          <Pressable
+            onPress={handleLogin}
+            disabled={loading}
+            className="bg-[#A8C9A8] rounded-full py-4 items-center"
+            style={({ pressed }) => pressed && { opacity: 0.8 }}
+          >
+            <Text className="text-[#411E12] font-semibold text-base">
+              {loading ? "Signing in..." : "Sign In"}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => router.push("/(auth)/register")}
+            className="mt-6 items-center"
+          >
+            <Text className="text-gray-500">
+              Don't have an account?{" "}
+              <Text className="text-[#411E12] font-semibold">Sign Up</Text>
+            </Text>
+          </Pressable>
+        </View>
       </View>
-    </View>
     </TouchableWithoutFeedback>
   );
 }
