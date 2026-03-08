@@ -1,11 +1,13 @@
 import React from "react";
-import { Pressable, View, Text } from "react-native";
+import { View, Text } from "react-native";
 import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../constants/Colors";
+import { useUnread } from "../../context/UnreadContext";
 
 export default function TabsLayout() {
   const router = useRouter();
+  const { unreadCount } = useUnread();
 
   return (
     <Tabs
@@ -17,12 +19,12 @@ export default function TabsLayout() {
           fontSize: 10,
           fontWeight: '600',
         },
-        tabBarLabelPosition: 'below-icon', // Force text not to wrap or squish
+        tabBarLabelPosition: 'below-icon',
         tabBarActiveBackgroundColor: '#a8c9a8',
         tabBarItemStyle: {
           borderRadius: 40,
           marginVertical: 5,
-          marginHorizontal: 0, // Reduced from 12 to stop text from truncating horizontally
+          marginHorizontal: 0,
           overflow: 'hidden',
         },
         tabBarStyle: {
@@ -32,7 +34,7 @@ export default function TabsLayout() {
           elevation: 5,
           backgroundColor: '#FFF1DA',
           borderRadius: 40,
-          height: 70, // Increased slightly from 64 so text fits
+          height: 70,
           borderTopWidth: 0,
           shadowColor: Colors.heading,
           shadowOffset: { width: 0, height: 6 },
@@ -40,7 +42,7 @@ export default function TabsLayout() {
           shadowRadius: 15,
           paddingBottom: 0,
           paddingTop: 2,
-          paddingHorizontal: 8, // Reduced from 15 to give labels more width
+          paddingHorizontal: 8,
         },
         headerStyle: {
           backgroundColor: Colors.background,
@@ -79,7 +81,6 @@ export default function TabsLayout() {
         }}
         listeners={{
           tabPress: (e) => {
-            // Prevent default behavior and explicitly navigate to clear params
             e.preventDefault();
             router.push("/(tabs)/post");
           },
@@ -93,6 +94,17 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="mail-outline" size={size} color={color} />
           ),
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: "#E53935",
+            color: "#fff",
+            fontSize: 10,
+            fontWeight: "800",
+            minWidth: 18,
+            height: 18,
+            lineHeight: 17,
+            borderRadius: 9,
+          },
         }}
       />
       <Tabs.Screen

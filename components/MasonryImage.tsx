@@ -49,10 +49,10 @@ export function MasonryImage({ uri, onPress, columnWidth, aspectRatio: initialRa
                 width: "100%",
                 marginBottom: 12,
                 shadowColor: "#000",
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.15,
-                shadowRadius: 8,
-                elevation: 5,
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.12,
+                shadowRadius: 10,
+                elevation: 4,
             }}
         >
             <Pressable
@@ -65,6 +65,8 @@ export function MasonryImage({ uri, onPress, columnWidth, aspectRatio: initialRa
                     overflow: "hidden",
                     justifyContent: "center",
                     alignItems: "center",
+                    borderWidth: 0.5,
+                    borderColor: "rgba(255, 255, 255, 0.4)", // Subtle edge highlight
                 }}
             >
                 <Image

@@ -134,6 +134,7 @@ export default function PublicProfileScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView
+        style={{ flexGrow: 0 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
         }
@@ -237,18 +238,16 @@ export default function PublicProfileScreen() {
           </View>
         </View>
 
-        {/* Subtab Bar (Filing Cabinet Style) */}
+        {/* Subtab Bar */}
         <View
           style={{
             flexDirection: "row",
             backgroundColor: Colors.background,
-            paddingHorizontal: 12,
+            marginHorizontal: 16,
             paddingTop: 8,
-            borderBottomWidth: 1,
-            borderBottomColor: Colors.brown.dark,
           }}
         >
-          {TABS.map((tab) => {
+          {TABS.map((tab, index) => {
             const isActive = activeTab === tab.key;
             return (
               <Pressable
@@ -258,14 +257,14 @@ export default function PublicProfileScreen() {
                   flex: 1,
                   alignItems: "center",
                   paddingVertical: 10,
-                  marginHorizontal: 3,
-                  borderTopLeftRadius: 14,
-                  borderTopRightRadius: 14,
-                  backgroundColor: isActive ? Colors.primary : "transparent",
-                  borderWidth: 1,
+                  borderTopWidth: isActive ? 1 : 0,
+                  borderLeftWidth: isActive ? 1 : 0,
+                  borderRightWidth: isActive ? 1 : 0,
                   borderBottomWidth: isActive ? 0 : 1,
                   borderColor: Colors.brown.dark,
-                  marginBottom: -1,
+                  borderTopLeftRadius: isActive ? 14 : 0,
+                  borderTopRightRadius: isActive ? 14 : 0,
+                  backgroundColor: isActive ? "#E9D2B3" : "transparent",
                 }}
               >
                 <Text
@@ -282,41 +281,63 @@ export default function PublicProfileScreen() {
           })}
         </View>
 
-        {/* Grid Content */}
-        <View style={{ padding: padding, flexDirection: "row", gap: gap }}>
-          {items.length === 0 ? (
-            <View style={{ flex: 1, alignItems: "center", paddingTop: 60 }}>
-              <View
-                style={{
-                  width: 72,
-                  height: 72,
-                  borderRadius: 36,
-                  backgroundColor: Colors.secondary,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 16,
-                }}
-              >
-                <Ionicons name={emptyState?.icon as any} size={32} color={Colors.primary} />
-              </View>
-              <Text style={{ fontSize: 16, fontWeight: "600", color: Colors.textSecondary, textAlign: "center" }}>
-                {emptyState?.message}
-              </Text>
-            </View>
-          ) : (
-            <>
-              {/* Left Column */}
-              <View style={{ flex: 1 }}>
-                {leftColumn.map((item) => renderGridItem(item))}
-              </View>
-              {/* Right Column */}
-              <View style={{ flex: 1 }}>
-                {rightColumn.map((item) => renderGridItem(item))}
-              </View>
-            </>
-          )}
-        </View>
       </ScrollView>
+
+        {/* Grid Content (fixed window with internal scroll) */}
+        <View style={{
+          flex: 1,
+          marginHorizontal: 16,
+          borderLeftWidth: 1,
+          borderRightWidth: 1,
+          borderBottomWidth: 1,
+          borderColor: Colors.brown.dark,
+          borderBottomLeftRadius: 12,
+          borderBottomRightRadius: 12,
+          overflow: "hidden",
+          marginBottom: 110,
+          backgroundColor: "#E9D2B3",
+        }}>
+          <ScrollView
+            contentContainerStyle={{
+              padding: padding,
+              flexDirection: "row",
+              gap: gap,
+            }}
+            showsVerticalScrollIndicator={false}
+          >
+            {items.length === 0 ? (
+              <View style={{ flex: 1, alignItems: "center", paddingTop: 60 }}>
+                <View
+                  style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: 36,
+                    backgroundColor: Colors.secondary,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: 16,
+                  }}
+                >
+                  <Ionicons name={emptyState?.icon as any} size={32} color={Colors.primary} />
+                </View>
+                <Text style={{ fontSize: 16, fontWeight: "600", color: Colors.textSecondary, textAlign: "center" }}>
+                  {emptyState?.message}
+                </Text>
+              </View>
+            ) : (
+              <>
+                {/* Left Column */}
+                <View style={{ flex: 1 }}>
+                  {leftColumn.map((item) => renderGridItem(item))}
+                </View>
+                {/* Right Column */}
+                <View style={{ flex: 1 }}>
+                  {rightColumn.map((item) => renderGridItem(item))}
+                </View>
+              </>
+            )}
+          </ScrollView>
+        </View>
     </View>
   );
 }

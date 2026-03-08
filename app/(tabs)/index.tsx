@@ -38,8 +38,6 @@ export default function ExploreScreen() {
       setError(null);
       const data = await itemsService.getAll();
       setItems(data);
-
-      // Batch fetch aspect ratios to prevent glitching
       const uris = data.map(item => item.imageUrls?.[0]).filter((u): u is string => !!u);
       const ratiosMap = await fetchAspectRatiosBatch(uris);
       setAspectRatios(prev => ({ ...prev, ...ratiosMap }));
@@ -52,9 +50,7 @@ export default function ExploreScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+  useEffect(() => { fetchItems(); }, [fetchItems]);
 
   // Snap drawer closed when screen regains focus (e.g. after posting)
   useFocusEffect(
@@ -75,45 +71,30 @@ export default function ExploreScreen() {
     });
   }, [fetchItems]);
 
-  // Split items into 2 columns using a "greedy" balancing algorithm
-  const leftColumn: Item[] = [];
-  const rightColumn: Item[] = [];
-  let leftHeight = 0;
-  let rightHeight = 0;
-
+  // Masonry columns
+  const leftCol: Item[] = [];
+  const rightCol: Item[] = [];
+  let lh = 0, rh = 0;
   items.forEach((item) => {
-    const ratio = aspectRatios[item._id] || 1;
-    const heightWeight = 1 / ratio;
-
-    if (leftHeight <= rightHeight) {
-      leftColumn.push(item);
-      leftHeight += heightWeight;
-    } else {
-      rightColumn.push(item);
-      rightHeight += heightWeight;
-    }
+    const hw = 1 / (aspectRatios[item._id] || 1);
+    if (lh <= rh) { leftCol.push(item); lh += hw; }
+    else { rightCol.push(item); rh += hw; }
   });
 
   const { width, height: screenHeight } = useWindowDimensions();
   const gap = 12;
   const padding = 16;
-  const columnWidth = (width - padding * 2 - gap) / 2;
+  const colW = (width - padding * 2 - gap) / 2;
 
-  const renderItem = (itemData: Item) => {
-    const photoUri = itemData.imageUrls && itemData.imageUrls.length > 0
-      ? itemData.imageUrls[0]
-      : "https://via.placeholder.com/300x400?text=No+Image";
-
-    return (
-      <MasonryImage
-        key={itemData._id}
-        uri={photoUri}
-        aspectRatio={aspectRatios[itemData._id]}
-        columnWidth={columnWidth}
-        onPress={() => router.push(`/item/${itemData._id}`)}
-      />
-    );
-  };
+  const renderItem = (d: Item) => (
+    <MasonryImage
+      key={d._id}
+      uri={d.imageUrls?.[0] ?? "https://via.placeholder.com/300x400?text=No+Image"}
+      aspectRatio={aspectRatios[d._id]}
+      columnWidth={colW}
+      onPress={() => router.push(`/item/${d._id}`)}
+    />
+  );
 
   // Scroll past the drawer on first layout — use contentOffset for instant hide
   const handleContentSizeChange = useCallback((_w: number, h: number) => {
@@ -154,9 +135,7 @@ export default function ExploreScreen() {
         onMomentumScrollEnd={handleMomentumEnd}
         scrollEventThrottle={16}
         bounces={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* Drawer image — hidden above the fold, revealed on pull-down */}
         <View style={{ height: DRAWER_HEIGHT, width: "100%", overflow: "hidden", marginHorizontal: -padding }}>
@@ -175,9 +154,7 @@ export default function ExploreScreen() {
             </View>
           ) : error ? (
             <View style={{ alignItems: "center", paddingTop: 60 }}>
-              <Text style={{ color: Colors.textSecondary, fontSize: 16, textAlign: "center", fontFamily: "Quicksand_400Regular" }}>
-                {error}
-              </Text>
+              <Text style={{ color: Colors.textSecondary, fontSize: 16, textAlign: "center", fontFamily: "Quicksand_400Regular" }}>{error}</Text>
             </View>
           ) : items.length === 0 ? (
             <View style={{ alignItems: "center", paddingTop: 60 }}>
@@ -185,12 +162,8 @@ export default function ExploreScreen() {
             </View>
           ) : (
             <View style={{ flexDirection: "row", gap }}>
-              <View style={{ flex: 1 }}>
-                {leftColumn.map((item) => renderItem(item))}
-              </View>
-              <View style={{ flex: 1 }}>
-                {rightColumn.map((item) => renderItem(item))}
-              </View>
+              <View style={{ flex: 1 }}>{leftCol.map(renderItem)}</View>
+              <View style={{ flex: 1 }}>{rightCol.map(renderItem)}</View>
             </View>
           )}
         </View>

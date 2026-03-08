@@ -21,6 +21,7 @@ import { Colors } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { messagesService } from "../../services/messages.service";
 import { itemsService } from "../../services/items.service";
+import { reviewsService } from "../../services/reviews.service";
 import { Item, User } from "../../types";
 
 // Palette: #FFD1D9, #E28D9B, #FAE5C4, #96755F, #411E12
@@ -82,8 +83,11 @@ export default function ItemDetailScreen() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
-  const [carouselWidth, setCarouselWidth] = useState(0);
   const [fullscreenVisible, setFullscreenVisible] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [sellerRating, setSellerRating] = useState<number | null>(null);
+  const [imageAspectRatios, setImageAspectRatios] = useState<Record<number, number>>({});
+  const [carouselWidth, setCarouselWidth] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
 
@@ -99,6 +103,24 @@ export default function ItemDetailScreen() {
         if (user?.likedItems?.includes(id)) {
           setIsLiked(true);
         }
+        if (data.status === "completed") {
+          reviewsService.checkExists(id).then(setHasReviewed).catch(() => { });
+        }
+        // Fetch seller rating
+        const seller = typeof data.postedBy === "object" && data.postedBy !== null
+          ? (data.postedBy as { _id: string })._id
+          : null;
+        if (seller) {
+          reviewsService.getForUser(seller)
+            .then(res => setSellerRating(res.avgRating))
+            .catch(() => { });
+        }
+        // Get aspect ratios for all images
+        data.imageUrls?.forEach((uri: string, index: number) => {
+          Image.getSize(uri, (w, h) => {
+            if (w && h) setImageAspectRatios(prev => ({ ...prev, [index]: w / h }));
+          }, () => { });
+        });
       })
       .catch(() => setError("Could not load item"))
       .finally(() => setLoading(false));
@@ -205,6 +227,10 @@ export default function ItemDetailScreen() {
   const postedBy = typeof item.postedBy === "object" && item.postedBy !== null
     ? item.postedBy as { _id: string; username: string; avatarUrl?: string }
     : null;
+  const receivedBy = typeof item.receivedBy === "object" && item.receivedBy !== null
+    ? item.receivedBy as { _id: string; username: string }
+    : null;
+  const isParticipant = (postedBy && user?._id === postedBy._id) || (receivedBy && user?._id === receivedBy._id);
   const tags = [
     item.intendedFit ? item.intendedFit.charAt(0).toUpperCase() + item.intendedFit.slice(1) : null,
     item.size ? `Size ${item.size}` : null,
@@ -316,34 +342,68 @@ export default function ItemDetailScreen() {
           className="relative mx-4 rounded-2xl overflow-hidden"
           onLayout={(e) => setCarouselWidth(e.nativeEvent.layout.width)}
         >
-          {images.length > 0 && carouselWidth > 0 ? (
-            <FlatList
-              ref={flatListRef}
-              data={images}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onViewableItemsChanged={onViewableItemsChanged}
-              viewabilityConfig={viewabilityConfig}
-              keyExtractor={(_, i) => i.toString()}
-              getItemLayout={(_, index) => ({
-                length: carouselWidth,
-                offset: carouselWidth * index,
-                index,
-              })}
-              renderItem={({ item: uri }) => (
-                <Pressable onPress={() => setFullscreenVisible(true)}>
-                  <View style={{ width: carouselWidth, aspectRatio: 3 / 4, backgroundColor: Palette.cream }}>
-                    <Image
-                      source={{ uri }}
-                      style={{ width: "100%", height: "100%" }}
-                      resizeMode="contain"
-                    />
-                  </View>
-                </Pressable>
-              )}
-            />
-          ) : (
+          {images.length > 0 && carouselWidth > 0 ? (() => {
+            // Use the smallest aspect ratio (tallest image) as the frame, clamped
+            const ratioValues = Object.values(imageAspectRatios);
+            const minRatio = ratioValues.length > 0 ? Math.min(...ratioValues) : 3 / 4;
+            const frameRatio = Math.max(3 / 5, Math.min(5 / 3, minRatio));
+            return (
+              <FlatList
+                ref={flatListRef}
+                data={images}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onViewableItemsChanged={onViewableItemsChanged}
+                viewabilityConfig={viewabilityConfig}
+                keyExtractor={(_, i) => i.toString()}
+                getItemLayout={(_, index) => ({
+                  length: carouselWidth,
+                  offset: carouselWidth * index,
+                  index,
+                })}
+                renderItem={({ item: uri, index }) => {
+                  const imgRatio = imageAspectRatios[index] || 3 / 4;
+                  const frameHeight = carouselWidth / frameRatio;
+                  // Calculate actual rendered size when "contained"
+                  let renderW, renderH;
+                  if (imgRatio > frameRatio) {
+                    // Image is wider than frame — width-limited
+                    renderW = carouselWidth;
+                    renderH = carouselWidth / imgRatio;
+                  } else {
+                    // Image is taller than frame — height-limited
+                    renderH = frameHeight;
+                    renderW = frameHeight * imgRatio;
+                  }
+                  return (
+                    <Pressable onPress={() => setFullscreenVisible(true)}>
+                      <View style={{
+                        width: carouselWidth,
+                        height: frameHeight,
+                        backgroundColor: Palette.cream,
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}>
+                        <View style={{
+                          width: renderW,
+                          height: renderH,
+                          borderRadius: 16,
+                          overflow: "hidden",
+                        }}>
+                          <Image
+                            source={{ uri }}
+                            style={{ width: "100%", height: "100%" }}
+                            resizeMode="cover"
+                          />
+                        </View>
+                      </View>
+                    </Pressable>
+                  );
+                }}
+              />
+            );
+          })() : (
             <View
               className="w-full bg-gray-200 items-center justify-center"
               style={{ aspectRatio: 3 / 4 }}
@@ -410,9 +470,9 @@ export default function ItemDetailScreen() {
             <View
               key={tag}
               className="rounded-full px-3 py-1"
-              style={{ backgroundColor: Palette.brown }}
+              style={{ backgroundColor: "#FFF1DA" }}
             >
-              <ThemedText variant="semibold" style={{ fontSize: 12, color: "#FFFFFF" }}>
+              <ThemedText variant="semibold" style={{ fontSize: 12, color: Palette.dark }}>
                 {tag}
               </ThemedText>
             </View>
@@ -437,6 +497,14 @@ export default function ItemDetailScreen() {
             <ThemedText variant="medium" style={{ fontSize: 14, color: Palette.dark, marginLeft: 8 }}>
               {postedBy.username}
             </ThemedText>
+            {sellerRating !== null && (
+              <View style={{ flexDirection: "row", alignItems: "center", marginLeft: 8 }}>
+                <Ionicons name="star" size={13} color={Colors.primary} />
+                <ThemedText style={{ fontSize: 13, color: Palette.brown, marginLeft: 3 }}>
+                  {sellerRating > 0 ? sellerRating.toFixed(1) : "New"}
+                </ThemedText>
+              </View>
+            )}
             <View className="flex-1" />
             <Ionicons name="chevron-forward" size={16} color={Palette.brown} />
           </Pressable>
@@ -457,46 +525,68 @@ export default function ItemDetailScreen() {
 
       {/* Docked Bottom Button */}
       {postedBy && user?._id === postedBy._id && item.status === "available" && (
+        <View style={{ position: "absolute", bottom: 40, left: 0, right: 0, paddingHorizontal: 16 }}>
+          <Pressable
+            onPress={() => router.push(`/transfer/qr-generate?itemId=${item._id}`)}
+            className="rounded-full py-4 items-center"
+            style={{ backgroundColor: Palette.green }}
+          >
+            <Text className="font-semibold text-base" style={{ color: Palette.dark, fontFamily: "Quicksand_600SemiBold" }}>
+              Start Transfer
+            </Text>
+          </Pressable>
+        </View>
+      )}
+      {postedBy && user?._id !== postedBy._id && item.status === "available" && (
+        <View style={{ position: "absolute", bottom: 40, left: 0, right: 0, paddingHorizontal: 16 }}>
+          <Pressable
+            onPress={async () => {
+              try {
+                const convo = await messagesService.getOrCreateConversation(
+                  postedBy!._id,
+                  item._id
+                );
+                router.push(`/chat/${convo._id}`);
+              } catch (error) {
+                Alert.alert("Error", "Could not start conversation");
+              }
+            }}
+            className="rounded-full py-4 items-center"
+            style={{ backgroundColor: "#a8c9a8" }}
+          >
+            <ThemedText variant="semibold" style={{ fontSize: 16, color: Palette.dark }}>
+              Message
+            </ThemedText>
+          </Pressable>
+        </View>
+      )}
+      {item.status === "completed" && isParticipant && !hasReviewed && (
         <SafeAreaView edges={["bottom"]} style={{ backgroundColor: Palette.cream }}>
           <View className="px-4 pb-4">
             <Pressable
-              onPress={() => router.push(`/transfer/qr-generate?itemId=${item._id}`)}
+              onPress={() => router.push(`/review/${item._id}`)}
               className="rounded-full py-4 items-center"
               style={{ backgroundColor: Palette.green }}
             >
               <Text className="font-semibold text-base" style={{ color: Palette.dark, fontFamily: "Quicksand_600SemiBold" }}>
-                Start Transfer
+                Leave a Review
               </Text>
             </Pressable>
           </View>
         </SafeAreaView>
       )}
-      {postedBy && user?._id !== postedBy._id && item.status === "available" && (
+      {item.status === "completed" && isParticipant && hasReviewed && (
         <SafeAreaView edges={["bottom"]} style={{ backgroundColor: Palette.cream }}>
           <View className="px-4 pb-4">
-            <Pressable
-              onPress={async () => {
-                try {
-                  const convo = await messagesService.getOrCreateConversation(
-                    postedBy!._id,
-                    item._id
-                  );
-                  router.push(`/chat/${convo._id}`);
-                } catch (error) {
-                  Alert.alert("Error", "Could not start conversation");
-                }
-              }}
-              className="rounded-full py-4 items-center"
-              style={{ backgroundColor: Palette.rose }}
-            >
-              <ThemedText variant="semibold" style={{ fontSize: 16, color: Palette.dark }}>
-                Message
-              </ThemedText>
-            </Pressable>
+            <View className="rounded-full py-4 items-center" style={{ backgroundColor: Palette.brown, opacity: 0.6 }}>
+              <Text className="font-semibold text-base" style={{ color: "#fff", fontFamily: "Quicksand_600SemiBold" }}>
+                Already Reviewed
+              </Text>
+            </View>
           </View>
         </SafeAreaView>
       )}
-      {item.status === "completed" && (
+      {item.status === "completed" && !isParticipant && (
         <SafeAreaView edges={["bottom"]} style={{ backgroundColor: Palette.cream }}>
           <View className="px-4 pb-4">
             <View className="rounded-full py-4 items-center" style={{ backgroundColor: Palette.brown, opacity: 0.6 }}>

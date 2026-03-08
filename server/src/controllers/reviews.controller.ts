@@ -35,6 +35,19 @@ export async function getReviewsForUser(
     }
 }
 
+export async function checkReviewExists(
+    req: AuthRequest,
+    res: Response
+): Promise<void> {
+    try {
+        const { itemId } = req.params;
+        const existing = await Review.findOne({ reviewer: req.userId, itemId });
+        res.json({ exists: !!existing });
+    } catch (error) {
+        res.status(500).json({ message: "Server error" });
+    }
+}
+
 export async function createReview(
     req: AuthRequest,
     res: Response

@@ -15,8 +15,10 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "../../hooks/useAuth";
 import { Colors } from "../../constants/Colors";
 import { itemsService } from "../../services/items.service";
+import { reviewsService } from "../../services/reviews.service";
 import { Item, ItemStatus } from "../../types";
 import { useRouter, useFocusEffect } from "expo-router";
+import { fetchAspectRatiosBatch } from "../../utils/image";
 
 type ProfileTab = "current" | "past" | "received" | "liked";
 
@@ -24,7 +26,7 @@ type ProfileTab = "current" | "past" | "received" | "liked";
 function ProfileCard({ uri, cardWidth, onPress }: { uri: string; cardWidth: number; onPress: () => void }) {
   const [ratio, setRatio] = useState<number>(3 / 4);
   useEffect(() => {
-    Image.getSize(uri, (w, h) => setRatio(w / h), () => {});
+    Image.getSize(uri, (w, h) => setRatio(w / h), () => { });
   }, [uri]);
 
   return (
@@ -61,6 +63,7 @@ export default function ProfileScreen() {
   const [myItems, setMyItems] = useState<Item[]>([]);
   const [claimedItems, setClaimedItems] = useState<Item[]>([]);
   const [likedItems, setLikedItems] = useState<Item[]>([]);
+  const [avgRating, setAvgRating] = useState(0);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
@@ -68,14 +71,18 @@ export default function ProfileScreen() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [mine, claimed, liked] = await Promise.all([
+      const [mine, received, liked, reviewsData] = await Promise.all([
         itemsService.getMine(),
         itemsService.getReceived(),
         itemsService.getLiked(),
+        user?._id ? reviewsService.getForUser(user._id) : Promise.resolve({ reviews: [], avgRating: 0, totalReviews: 0 }),
       ]);
       setMyItems(mine);
-      setClaimedItems(claimed);
+      setClaimedItems(received);
       setLikedItems(liked);
+      setAvgRating(reviewsData.avgRating);
+
+
     } catch (error) {
       console.error("Failed to fetch profile data:", error);
     }
@@ -173,6 +180,7 @@ export default function ProfileScreen() {
         scrollEventThrottle={16}
         bounces={false}
         showsVerticalScrollIndicator={false}
+        style={{ flexGrow: 0 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
         }
@@ -230,6 +238,7 @@ export default function ProfileScreen() {
                 fontSize: 22,
                 fontWeight: "700",
                 color: Colors.heading,
+                fontFamily: "Quicksand_700Bold",
               }}
             >
               {user?.username || "Username"}
@@ -240,6 +249,7 @@ export default function ProfileScreen() {
                   fontSize: 13,
                   color: Colors.textSecondary,
                   marginTop: 3,
+                  fontFamily: "Quicksand_400Regular",
                 }}
                 numberOfLines={2}
               >
@@ -250,7 +260,7 @@ export default function ProfileScreen() {
             {/* Tokens */}
             <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
               <View style={{ width: 16, height: 16, borderRadius: 8, borderWidth: 1.5, borderColor: Colors.primary, alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontSize: 9, fontWeight: "800", color: Colors.primary, marginTop: -0.5 }}>$</Text>
+                <Text style={{ fontSize: 9, fontWeight: "800", color: Colors.primary, marginTop: -0.5, fontFamily: "Quicksand_700Bold" }}>$</Text>
               </View>
               <Text
                 style={{
@@ -258,6 +268,7 @@ export default function ProfileScreen() {
                   fontWeight: "600",
                   color: Colors.text,
                   marginLeft: 5,
+                  fontFamily: "Quicksand_600SemiBold",
                 }}
               >
                 {user?.tokenBalance ?? 0}
@@ -267,6 +278,7 @@ export default function ProfileScreen() {
                   fontSize: 13,
                   color: Colors.textSecondary,
                   marginLeft: 3,
+                  fontFamily: "Quicksand_500Medium",
                 }}
               >
                 tokens
@@ -279,8 +291,7 @@ export default function ProfileScreen() {
               style={{ flexDirection: "row", alignItems: "center", marginTop: 6 }}
             >
               {[1, 2, 3, 4, 5].map((n) => {
-                const rating = 3.5;
-                const fill = Math.min(1, Math.max(0, rating - (n - 1)));
+                const fill = Math.min(1, Math.max(0, avgRating - (n - 1)));
                 return (
                   <View key={n} style={{ width: 15, height: 15, marginRight: 1 }}>
                     <Ionicons
@@ -305,9 +316,10 @@ export default function ProfileScreen() {
                   fontWeight: "600",
                   color: Colors.text,
                   marginLeft: 5,
+                  fontFamily: "Quicksand_600SemiBold",
                 }}
               >
-                3.5
+                {avgRating > 0 ? avgRating.toFixed(1) : "New"}
               </Text>
               <Ionicons
                 name="chevron-forward"
@@ -358,6 +370,7 @@ export default function ProfileScreen() {
                   borderColor: Colors.brown.dark,
                   borderTopLeftRadius: isActive ? 14 : 0,
                   borderTopRightRadius: isActive ? 14 : 0,
+                  backgroundColor: isActive ? "#E9D2B3" : "transparent",
                 }}
               >
                 <Text
@@ -365,6 +378,7 @@ export default function ProfileScreen() {
                     fontSize: 13,
                     fontWeight: isActive ? "700" : "500",
                     color: isActive ? Colors.brown.dark : Colors.textSecondary,
+                    fontFamily: isActive ? "Quicksand_700Bold" : "Quicksand_500Medium",
                   }}
                 >
                   {tab.label}
@@ -374,12 +388,18 @@ export default function ProfileScreen() {
           })}
         </View>
 
-        {/* ── Tab Content ── */}
+        {/* ── Tab Content (fixed window with internal scroll) ── */}
         <View style={{
           marginHorizontal: 16,
           borderLeftWidth: 1,
           borderRightWidth: 1,
+          borderBottomWidth: 1,
           borderColor: Colors.brown.dark,
+          borderBottomLeftRadius: 12,
+          borderBottomRightRadius: 12,
+          overflow: "hidden",
+          marginBottom: 110,
+          backgroundColor: "#E9D2B3",
           paddingHorizontal: 8,
           paddingTop: 12,
           paddingBottom: 12,
@@ -454,7 +474,7 @@ export default function ProfileScreen() {
           )}
         </View>
         </View>
-      </ScrollView >
-    </View >
+      </ScrollView>
+    </View>
   );
 }

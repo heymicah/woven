@@ -109,12 +109,12 @@ export default function ReviewsScreen() {
                         width: 36,
                         height: 36,
                         borderRadius: 18,
-                        backgroundColor: Colors.secondary,
+                        backgroundColor: "#FFFFFF",
                         alignItems: "center",
                         justifyContent: "center",
                     }}
                 >
-                    <Ionicons name="arrow-back" size={20} color={Colors.primary} />
+                    <Ionicons name="arrow-back" size={20} color={Colors.heading} />
                 </Pressable>
 
                 <View style={{ flex: 1, marginLeft: 12 }}>
@@ -129,7 +129,7 @@ export default function ReviewsScreen() {
                     </Text>
                     {totalReviews > 0 && (
                         <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
-                            <StarRow rating={3.5} size={15} />
+                            <StarRow rating={avgRating} size={15} />
                             <Text
                                 style={{
                                     fontSize: 14,
@@ -138,7 +138,7 @@ export default function ReviewsScreen() {
                                     marginLeft: 6,
                                 }}
                             >
-                                {(3.5).toFixed(1)}
+                                {avgRating.toFixed(1)}
                             </Text>
                             <Text
                                 style={{
@@ -171,17 +171,23 @@ export default function ReviewsScreen() {
                             key={option.key}
                             onPress={() => handleSortChange(option.key)}
                             style={{
-                                paddingHorizontal: 14,
-                                paddingVertical: 8,
+                                paddingHorizontal: 16,
+                                paddingVertical: 9,
                                 borderRadius: 20,
-                                backgroundColor: isActive ? Colors.primary : Colors.secondary,
+                                minHeight: 38,
+                                justifyContent: "center",
+                                alignItems: "center",
+                                backgroundColor: isActive ? Colors.primary : "#FFF1DA",
+                                borderWidth: isActive ? 0 : 1,
+                                borderColor: "#E5E7EB",
                             }}
                         >
                             <Text
                                 style={{
                                     fontSize: 13,
-                                    fontWeight: isActive ? "700" : "500",
-                                    color: isActive ? Colors.heading : Colors.text,
+                                    fontWeight: isActive ? "600" : "500",
+                                    color: isActive ? Colors.brown.dark : Colors.textSecondary,
+                                    fontFamily: isActive ? "Quicksand_600SemiBold" : "Quicksand_500Medium",
                                 }}
                             >
                                 {option.label}

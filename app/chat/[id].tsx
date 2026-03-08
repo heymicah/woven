@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../hooks/useAuth";
 import { useSocket } from "../../context/SocketContext";
+import { useUnread } from "../../context/UnreadContext";
 import { messagesService } from "../../services/messages.service";
 import { reviewsService } from "../../services/reviews.service";
 import { Conversation, Message } from "../../types";
@@ -34,6 +35,7 @@ export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const socket = useSocket();
+  const { refresh: refreshUnread } = useUnread();
 
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -56,6 +58,8 @@ export default function ChatScreen() {
       ]);
       setConversation(convo);
       setMessages(msgs);
+      // Mark conversation as read and refresh badge
+      messagesService.markAsRead(id).then(() => refreshUnread()).catch(() => { });
     } catch (error) {
       console.error("Failed to load chat:", error);
     } finally {
@@ -147,7 +151,9 @@ export default function ChatScreen() {
               style={{ width: 32, height: 32, borderRadius: 16 }}
             />
           ) : (
-            <Ionicons name="person-circle" size={32} color={Palette.brown} />
+            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: "#E5D5B8", alignItems: "center", justifyContent: "center" }}>
+              <Ionicons name="person" size={20} color={Palette.brown} />
+            </View>
           )}
           <View className="ml-2">
             <Text
@@ -201,14 +207,14 @@ export default function ChatScreen() {
                 <View
                   className="px-4 py-3 rounded-2xl"
                   style={{
-                    backgroundColor: isMine ? Palette.rose : "#FFF1DA",
+                    backgroundColor: isMine ? "#a8c9a8" : "#FFF1DA",
                     borderBottomRightRadius: isMine ? 4 : 16,
                     borderBottomLeftRadius: isMine ? 16 : 4,
                   }}
                 >
                   <Text
                     style={{
-                      color: isMine ? "#FFFFFF" : Palette.dark,
+                      color: isMine ? "#411E12" : Palette.dark,
                       fontFamily: "Quicksand_400Regular",
                       fontSize: 15,
                     }}
@@ -251,12 +257,12 @@ export default function ChatScreen() {
             onPress={handleSend}
             className="w-11 h-11 rounded-full items-center justify-center"
             style={{
-              backgroundColor: Palette.rose,
+              backgroundColor: "#a8c9a8",
               opacity: text.trim() ? 1 : 0.5,
             }}
             disabled={!text.trim() || sending}
           >
-            <Ionicons name="send" size={18} color="#FFFFFF" />
+            <Ionicons name="send" size={18} color="#411E12" />
           </Pressable>
         </View>
       </KeyboardAvoidingView>
