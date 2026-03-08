@@ -188,112 +188,126 @@ export default function PostScreen() {
   }, []);
 
   return (
-    <KeyboardAvoidingView
-      style={styles.screen}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={90}
-    >
-      <ScrollView
-        ref={scrollRef}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+    <View style={styles.screen}>
+      {/* 1. Permanent beige ground footer at the absolute bottom */}
+      <View
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 110,
+          backgroundColor: Colors.background,
+        }}
+      />
+
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
-        {/* Header */}
-        <Text style={styles.heading}>New Post</Text>
+        <ScrollView
+          ref={scrollRef}
+          style={[styles.scrollView, { backgroundColor: "transparent" }]}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
+          <Text style={styles.heading}>New Post</Text>
 
-        {/* 1. Photos */}
-        <PhotoStrip
-          photos={photos}
-          onAddPhotos={handleAddPhotos}
-          onDeletePhoto={handleDeletePhoto}
-          onCropPhoto={handleCropPhoto}
-          onSetMain={handleSetMain}
-          onReorder={handleReorder}
-        />
-
-        {/* 2. Title */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>Title</Text>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Vintage denim jacket"
-            placeholderTextColor={Colors.textSecondary}
-            value={title}
-            onChangeText={setTitle}
-            maxLength={100}
-            returnKeyType="done"
-            accessibilityLabel="Item title"
+          {/* 1. Photos */}
+          <PhotoStrip
+            photos={photos}
+            onAddPhotos={handleAddPhotos}
+            onDeletePhoto={handleDeletePhoto}
+            onCropPhoto={handleCropPhoto}
+            onSetMain={handleSetMain}
+            onReorder={handleReorder}
           />
-        </View>
 
-        {/* 3. Category */}
-        <SingleSelectChipGroup
-          label="Category"
-          options={CATEGORY_OPTIONS}
-          selected={category}
-          onSelect={setCategory}
-        />
+          {/* 2. Title */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Title</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Vintage denim jacket"
+              placeholderTextColor={Colors.textSecondary}
+              value={title}
+              onChangeText={setTitle}
+              maxLength={100}
+              returnKeyType="done"
+              accessibilityLabel="Item title"
+            />
+          </View>
 
-        {/* 4. Intended Fit */}
-        <SingleSelectChipGroup
-          label="Intended Fit"
-          options={FIT_OPTIONS}
-          selected={intendedFit}
-          onSelect={setIntendedFit}
-        />
-
-        {/* 5. Size */}
-        <SizeSelector selected={size} onSelect={setSize} />
-
-        {/* 6. Condition */}
-        <SingleSelectChipGroup
-          label="Condition"
-          options={CONDITION_OPTIONS}
-          selected={condition}
-          onSelect={setCondition}
-        />
-
-        {/* 7. Description (optional) */}
-        <View style={styles.fieldGroup}>
-          <Text style={[styles.fieldLabel, styles.optionalLabel]}>
-            Description{" "}
-            <Text style={styles.optionalHint}>(optional)</Text>
-          </Text>
-          <TextInput
-            style={[styles.textInput, styles.textArea]}
-            placeholder="Share details about fit, brand, material, wear…"
-            placeholderTextColor={Colors.textSecondary}
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            numberOfLines={3}
-            textAlignVertical="top"
-            maxLength={1000}
-            onFocus={handleFocusDescription}
-            accessibilityLabel="Item description, optional"
+          {/* 3. Category */}
+          <SingleSelectChipGroup
+            label="Category"
+            options={CATEGORY_OPTIONS}
+            selected={category}
+            onSelect={setCategory}
           />
-        </View>
 
-        <View style={{ height: 150 }} />
-      </ScrollView>
+          {/* 4. Intended Fit */}
+          <SingleSelectChipGroup
+            label="Intended Fit"
+            options={FIT_OPTIONS}
+            selected={intendedFit}
+            onSelect={setIntendedFit}
+          />
 
-      {/* 8. Post button — sticky at bottom */}
-      <PostButton
-        disabled={!isFormValid}
-        loading={isSubmitting}
-        onPress={handleSubmit}
-      />
+          {/* 5. Size */}
+          <SizeSelector selected={size} onSelect={setSize} />
 
-      {/* Crop modal */}
-      <ImageCropModal
-        visible={cropIndex !== null}
-        imageUri={cropUri}
-        onCancel={handleCropCancel}
-        onDone={handleCropDone}
-      />
-    </KeyboardAvoidingView>
+          {/* 6. Condition */}
+          <SingleSelectChipGroup
+            label="Condition"
+            options={CONDITION_OPTIONS}
+            selected={condition}
+            onSelect={setCondition}
+          />
+
+          {/* 7. Description (optional) */}
+          <View style={styles.fieldGroup}>
+            <Text style={[styles.fieldLabel, styles.optionalLabel]}>
+              Description{" "}
+              <Text style={styles.optionalHint}>(optional)</Text>
+            </Text>
+            <TextInput
+              style={[styles.textInput, styles.textArea]}
+              placeholder="Share details about fit, brand, material, wear…"
+              placeholderTextColor={Colors.textSecondary}
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+              maxLength={1000}
+              onFocus={handleFocusDescription}
+              accessibilityLabel="Item description, optional"
+            />
+          </View>
+
+          <View style={{ height: 150 }} />
+        </ScrollView>
+
+        {/* 8. Post button — sticky at bottom */}
+        <PostButton
+          disabled={!isFormValid}
+          loading={isSubmitting}
+          onPress={handleSubmit}
+        />
+
+        {/* Crop modal */}
+        <ImageCropModal
+          visible={cropIndex !== null}
+          imageUri={cropUri}
+          onCancel={handleCropCancel}
+          onDone={handleCropDone}
+        />
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
