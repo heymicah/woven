@@ -10,8 +10,10 @@ const CLAIM_COST = 1;
 
 export async function getItems(req: Request, res: Response): Promise<void> {
   try {
-    const { category, size, condition, search } = req.query;
-    const filter: Record<string, any> = { status: ItemStatus.AVAILABLE };
+    const { category, size, condition, search, userId, status } = req.query;
+    const filter: Record<string, any> = { status: status || ItemStatus.AVAILABLE };
+
+    if (userId) filter.postedBy = userId;
 
     if (category) filter.category = category;
     if (size) filter.size = size;
