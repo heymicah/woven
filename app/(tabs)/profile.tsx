@@ -16,6 +16,7 @@ import { itemsService } from "../../services/items.service";
 import { reviewsService } from "../../services/reviews.service";
 import { Item, ItemStatus } from "../../types";
 import { useRouter, useFocusEffect } from "expo-router";
+import { fetchAspectRatiosBatch } from "../../utils/image";
 
 type ProfileTab = "current" | "past" | "received" | "liked";
 
@@ -72,7 +73,7 @@ export default function ProfileScreen() {
         user?._id ? reviewsService.getForUser(user._id) : Promise.resolve({ reviews: [], avgRating: 0, totalReviews: 0 }),
       ]);
       setMyItems(mine);
-      setClaimedItems(claimed);
+      setClaimedItems(received);
       setLikedItems(liked);
       setAvgRating(reviewsData.avgRating);
 
@@ -257,7 +258,7 @@ export default function ProfileScreen() {
                 }}
               >
                 {avgRating > 0 ? avgRating.toFixed(1) : "New"}
-              </ThemedText>
+              </Text>
               <Ionicons
                 name="chevron-forward"
                 size={14}
