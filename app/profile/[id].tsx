@@ -134,6 +134,7 @@ export default function PublicProfileScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView
+        style={{ flexGrow: 0 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
         }
@@ -263,6 +264,7 @@ export default function PublicProfileScreen() {
                   borderColor: Colors.brown.dark,
                   borderTopLeftRadius: isActive ? 14 : 0,
                   borderTopRightRadius: isActive ? 14 : 0,
+                  backgroundColor: isActive ? "#E9D2B3" : "transparent",
                 }}
               >
                 <Text
@@ -279,49 +281,63 @@ export default function PublicProfileScreen() {
           })}
         </View>
 
-        {/* Grid Content */}
+      </ScrollView>
+
+        {/* Grid Content (fixed window with internal scroll) */}
         <View style={{
+          flex: 1,
           marginHorizontal: 16,
           borderLeftWidth: 1,
           borderRightWidth: 1,
+          borderBottomWidth: 1,
           borderColor: Colors.brown.dark,
-          padding: padding,
-          flexDirection: "row",
-          gap: gap,
+          borderBottomLeftRadius: 12,
+          borderBottomRightRadius: 12,
+          overflow: "hidden",
+          marginBottom: 110,
+          backgroundColor: "#E9D2B3",
         }}>
-          {items.length === 0 ? (
-            <View style={{ flex: 1, alignItems: "center", paddingTop: 60 }}>
-              <View
-                style={{
-                  width: 72,
-                  height: 72,
-                  borderRadius: 36,
-                  backgroundColor: Colors.secondary,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 16,
-                }}
-              >
-                <Ionicons name={emptyState?.icon as any} size={32} color={Colors.primary} />
+          <ScrollView
+            contentContainerStyle={{
+              padding: padding,
+              flexDirection: "row",
+              gap: gap,
+            }}
+            showsVerticalScrollIndicator={false}
+          >
+            {items.length === 0 ? (
+              <View style={{ flex: 1, alignItems: "center", paddingTop: 60 }}>
+                <View
+                  style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: 36,
+                    backgroundColor: Colors.secondary,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: 16,
+                  }}
+                >
+                  <Ionicons name={emptyState?.icon as any} size={32} color={Colors.primary} />
+                </View>
+                <Text style={{ fontSize: 16, fontWeight: "600", color: Colors.textSecondary, textAlign: "center" }}>
+                  {emptyState?.message}
+                </Text>
               </View>
-              <Text style={{ fontSize: 16, fontWeight: "600", color: Colors.textSecondary, textAlign: "center" }}>
-                {emptyState?.message}
-              </Text>
-            </View>
-          ) : (
-            <>
-              {/* Left Column */}
-              <View style={{ flex: 1 }}>
-                {leftColumn.map((item) => renderGridItem(item))}
-              </View>
-              {/* Right Column */}
-              <View style={{ flex: 1 }}>
-                {rightColumn.map((item) => renderGridItem(item))}
-              </View>
-            </>
-          )}
+            ) : (
+              <>
+                {/* Left Column */}
+                <View style={{ flex: 1 }}>
+                  {leftColumn.map((item) => renderGridItem(item))}
+                </View>
+                {/* Right Column */}
+                <View style={{ flex: 1 }}>
+                  {rightColumn.map((item) => renderGridItem(item))}
+                </View>
+              </>
+            )}
+          </ScrollView>
         </View>
-      </ScrollView>
     </View>
   );
 }
