@@ -6,9 +6,12 @@ import {
   ActivityIndicator,
   StyleSheet,
   Keyboard,
+  Platform,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../../constants/Colors";
+
+// Floating tab bar: bottom 30 + height 70 = 100px from screen bottom
+const TAB_BAR_CLEARANCE = 110;
 
 interface PostButtonProps {
   disabled: boolean;
@@ -17,31 +20,22 @@ interface PostButtonProps {
 }
 
 export default function PostButton({ disabled, loading, onPress }: PostButtonProps) {
-  const insets = useSafeAreaInsets();
-  const [isKeyboardVisible, setKeyboardVisible] = React.useState(false);
+  const [keyboardUp, setKeyboardUp] = React.useState(false);
 
   React.useEffect(() => {
-    const showSubscription = Keyboard.addListener("keyboardWillShow", () => {
-      setKeyboardVisible(true);
-    });
-    const hideSubscription = Keyboard.addListener("keyboardWillHide", () => {
-      setKeyboardVisible(false);
-    });
-
-    return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
-    };
+    const show = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      () => setKeyboardUp(true)
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboardUp(false)
+    );
+    return () => { show.remove(); hide.remove(); };
   }, []);
 
   return (
-    <View
-      style={[
-        styles.footer,
-        { paddingBottom: isKeyboardVisible ? Math.max(insets.bottom, 16) : 110 },
-      ]}
-      pointerEvents="box-none"
-    >
+    <View style={[styles.footer, { paddingBottom: keyboardUp ? 8 : TAB_BAR_CLEARANCE }]}>
       <Pressable
         onPress={onPress}
         disabled={disabled || loading}
@@ -72,15 +66,9 @@ export default function PostButton({ disabled, loading, onPress }: PostButtonPro
 
 const styles = StyleSheet.create({
   footer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "transparent",
+    backgroundColor: Colors.background,
     paddingHorizontal: 20,
     paddingTop: 12,
-    borderTopWidth: 0,
-    paddingBottom: 110,
   },
   button: {
     backgroundColor: "#411E12",

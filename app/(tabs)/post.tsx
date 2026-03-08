@@ -44,7 +44,6 @@ const CATEGORY_OPTIONS = [
   { value: ItemCategory.SHOES, label: "Shoes" },
   { value: ItemCategory.BAGS, label: "Bags" },
   { value: ItemCategory.ACCESSORIES, label: "Hats & Accessories" },
-  { value: ItemCategory.OTHER, label: "Other" },
 ];
 
 const FIT_OPTIONS = [
@@ -242,26 +241,14 @@ export default function PostScreen() {
 
   return (
     <View style={styles.screen}>
-      {/* 1. Permanent beige ground footer at the absolute bottom */}
-      <View
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: 110,
-          backgroundColor: Colors.background,
-        }}
-      />
-
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         <ScrollView
           ref={scrollRef}
-          style={[styles.scrollView, { backgroundColor: "transparent" }]}
+          style={[styles.scrollView, { backgroundColor: Colors.background }]}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -287,7 +274,7 @@ export default function PostScreen() {
 
               {/* 2. Title */}
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Title</Text>
+                <Text style={styles.fieldLabel}>Title<Text style={{ color: Colors.error }}> *</Text></Text>
                 <TextInput
                   style={styles.textInput}
                   placeholder="Vintage denim jacket"
@@ -306,6 +293,7 @@ export default function PostScreen() {
                 options={CATEGORY_OPTIONS}
                 selected={category}
                 onSelect={setCategory}
+                required
               />
 
               {/* 4. Intended Fit */}
@@ -314,6 +302,7 @@ export default function PostScreen() {
                 options={FIT_OPTIONS}
                 selected={intendedFit}
                 onSelect={setIntendedFit}
+                required
               />
 
               {/* 5. Size */}
@@ -325,6 +314,7 @@ export default function PostScreen() {
                 options={CONDITION_OPTIONS}
                 selected={condition}
                 onSelect={setCondition}
+                required
               />
 
               {/* 7. Description (optional) */}
@@ -350,7 +340,7 @@ export default function PostScreen() {
 
             </>
           )}
-          <View style={{ height: 150 }} />
+          <View style={{ height: 20 }} />
         </ScrollView>
 
         {/* 8. Post button — sticky at bottom */}

@@ -14,6 +14,8 @@ interface SingleSelectChipGroupProps {
   onSelect: (value: string) => void;
   /** If true, chips wrap instead of scrolling horizontally */
   wrap?: boolean;
+  /** Show a red asterisk to indicate required */
+  required?: boolean;
 }
 
 export default function SingleSelectChipGroup({
@@ -22,6 +24,7 @@ export default function SingleSelectChipGroup({
   selected,
   onSelect,
   wrap = true,
+  required = false,
 }: SingleSelectChipGroupProps) {
   const chips = options.map((opt) => {
     const isActive = selected === opt.value;
@@ -51,7 +54,10 @@ export default function SingleSelectChipGroup({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.label}>
+        {label}
+        {required && <Text style={{ color: Colors.error }}> *</Text>}
+      </Text>
       {wrap ? (
         <View style={styles.wrapContainer}>{chips}</View>
       ) : (
@@ -96,7 +102,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   chipActive: {
-    backgroundColor: Colors.secondary,
+    backgroundColor: Colors.brown.dark,
   },
   chipInactive: {
     backgroundColor: "#FFF1DA",
