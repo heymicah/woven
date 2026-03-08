@@ -330,16 +330,21 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
 
-          {/* Settings Gear — top-right, no background */}
-          <Pressable
-            onPress={() => router.push("/settings")}
-            style={{
-              padding: 4,
-              marginTop: -2,
-            }}
-          >
-            <Ionicons name="settings-outline" size={24} color={Colors.textSecondary} />
-          </Pressable>
+          {/* Top-right icons */}
+          <View style={{ flexDirection: "column", alignItems: "center", gap: 12, marginTop: -2 }}>
+            <Pressable
+              onPress={() => router.push("/transfer/qr-scan")}
+              style={{ padding: 4 }}
+            >
+              <Ionicons name="scan-outline" size={24} color={Colors.textSecondary} />
+            </Pressable>
+            <Pressable
+              onPress={() => router.push("/settings")}
+              style={{ padding: 4 }}
+            >
+              <Ionicons name="settings-outline" size={24} color={Colors.textSecondary} />
+            </Pressable>
+          </View>
         </View>
 
         {/* ── Subtab Bar ── */}
