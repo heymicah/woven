@@ -5,6 +5,7 @@ import {
   Pressable,
   ActivityIndicator,
   StyleSheet,
+  Keyboard,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../../constants/Colors";
@@ -17,13 +18,29 @@ interface PostButtonProps {
 
 export default function PostButton({ disabled, loading, onPress }: PostButtonProps) {
   const insets = useSafeAreaInsets();
+  const [isKeyboardVisible, setKeyboardVisible] = React.useState(false);
+
+  React.useEffect(() => {
+    const showSubscription = Keyboard.addListener("keyboardWillShow", () => {
+      setKeyboardVisible(true);
+    });
+    const hideSubscription = Keyboard.addListener("keyboardWillHide", () => {
+      setKeyboardVisible(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   return (
     <View
       style={[
         styles.footer,
-        { paddingBottom: Math.max(insets.bottom, 16) },
+        { paddingBottom: isKeyboardVisible ? Math.max(insets.bottom, 16) : 110 },
       ]}
+      pointerEvents="box-none"
     >
       <Pressable
         onPress={onPress}
@@ -55,11 +72,15 @@ export default function PostButton({ disabled, loading, onPress }: PostButtonPro
 
 const styles = StyleSheet.create({
   footer: {
-    backgroundColor: Colors.background,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "transparent",
     paddingHorizontal: 20,
     paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    borderTopWidth: 0,
+    paddingBottom: 110,
   },
   button: {
     backgroundColor: "#411E12",
@@ -86,6 +107,7 @@ const styles = StyleSheet.create({
     fontFamily: "Quicksand_700Bold",
   },
   buttonTextDisabled: {
-    color: Colors.textSecondary,
+    color: "#FFFFFF",
+    opacity: 0.8,
   },
 });
