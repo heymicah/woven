@@ -107,13 +107,13 @@ export default function ExploreScreen() {
           </View>
         ) : error ? (
           <View style={{ alignItems: "center", paddingTop: 60 }}>
-            <Text style={{ color: Colors.textSecondary, fontSize: 16, textAlign: "center" }}>
+            <Text style={{ color: Colors.textSecondary, fontSize: 16, textAlign: "center", fontFamily: "Quicksand_400Regular" }}>
               {error}
             </Text>
           </View>
         ) : items.length === 0 ? (
           <View style={{ alignItems: "center", paddingTop: 60 }}>
-            <Text style={{ color: Colors.textSecondary, fontSize: 16 }}>No items found</Text>
+            <Text style={{ color: Colors.textSecondary, fontSize: 16, fontFamily: "Quicksand_400Regular" }}>No items found</Text>
           </View>
         ) : (
           <View style={{ flexDirection: "row", gap }}>

@@ -1,7 +1,6 @@
 import React, { useRef, useState } from "react";
 import {
   View,
-  Text,
   TextInput,
   Pressable,
   Alert,
@@ -10,6 +9,7 @@ import {
   TouchableWithoutFeedback,
   Image,
 } from "react-native";
+import { ThemedText } from "../../components/ThemedText";
 import { useAuth } from "../../hooks/useAuth";
 import { router } from "expo-router";
 
@@ -47,13 +47,13 @@ export default function RegisterScreen() {
             style={{ width: 300, height: 120, alignSelf: "center", marginBottom: 8 }}
             resizeMode="contain"
           />
-          <Text className="text-base text-center text-gray-500 mb-10">
+          <ThemedText style={{ fontSize: 16, textAlign: "center", color: "#6B7280", marginBottom: 40 }}>
             Join the community
-          </Text>
+          </ThemedText>
 
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder="Username"
             placeholderTextColor="#96755F"
             value={username}
             onChangeText={setUsername}
@@ -93,9 +93,19 @@ export default function RegisterScreen() {
             className="bg-[#A8C9A8] rounded-full py-4 items-center"
             style={({ pressed }) => pressed && { opacity: 0.8 }}
           >
-            <Text className="text-[#411E12] font-semibold text-base">
+            <ThemedText variant="semibold" style={{ color: "#411E12", fontSize: 16 }}>
               {loading ? "Creating account..." : "Create Account"}
-            </Text>
+            </ThemedText>
+          </Pressable>
+
+          <Pressable
+            onPress={() => router.push("/(auth)/login")}
+            className="mt-6 items-center"
+          >
+            <ThemedText style={{ color: "#6B7280" }}>
+              Already have an account?{" "}
+              <ThemedText variant="semibold" style={{ color: "#411E12" }}>Sign In</ThemedText>
+            </ThemedText>
           </Pressable>
         </View>
       </View>
@@ -122,5 +132,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     fontSize: 16,
     color: "#411E12",
+    fontFamily: "Quicksand_400Regular",
   },
 });

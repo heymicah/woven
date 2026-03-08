@@ -1,13 +1,13 @@
 import React from "react";
 import {
   View,
-  Text,
   Pressable,
   ActivityIndicator,
   StyleSheet,
   Keyboard,
   Platform,
 } from "react-native";
+import { ThemedText } from "../ThemedText";
 import { Colors } from "../../constants/Colors";
 
 // Floating tab bar: bottom 30 + height 70 = 100px from screen bottom
@@ -51,14 +51,15 @@ export default function PostButton({ disabled, loading, onPress, label = "Post I
         {loading ? (
           <ActivityIndicator size="small" color="#FFFFFF" />
         ) : (
-          <Text
+          <ThemedText
+            variant="bold"
             style={[
               styles.buttonText,
               (disabled || loading) && styles.buttonTextDisabled,
             ]}
           >
             {label}
-          </Text>
+          </ThemedText>
         )}
       </Pressable>
     </View>
@@ -91,9 +92,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 16,
-    fontWeight: "700",
     color: "#FAE5C4",
-    fontFamily: "Quicksand_700Bold",
   },
   buttonTextDisabled: {
     color: "#FFFFFF",

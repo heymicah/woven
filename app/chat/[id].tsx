@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,7 +16,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../hooks/useAuth";
 import { useSocket } from "../../context/SocketContext";
 import { messagesService } from "../../services/messages.service";
+import { reviewsService } from "../../services/reviews.service";
 import { Conversation, Message } from "../../types";
+import { Colors } from "../../constants/Colors";
 
 const Palette = {
   pink: "#FFD1D9",
@@ -37,6 +40,7 @@ export default function ChatScreen() {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [partnerRating, setPartnerRating] = useState<number | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
   const otherUser = conversation?.participants.find(
@@ -62,6 +66,14 @@ export default function ChatScreen() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (otherUser?._id) {
+      reviewsService.getForUser(otherUser._id)
+        .then(res => setPartnerRating(res.avgRating))
+        .catch(err => console.error("Failed to fetch partner rating:", err));
+    }
+  }, [otherUser?._id]);
 
   useEffect(() => {
     if (!socket || !id) return;
@@ -125,16 +137,44 @@ export default function ChatScreen() {
         >
           <Ionicons name="arrow-back" size={20} color={Palette.dark} />
         </Pressable>
-        <Ionicons name="person-circle" size={32} color={Palette.brown} />
-        <Text
-          className="text-base font-semibold ml-2"
-          style={{
-            color: Palette.dark,
-            fontFamily: "Quicksand_600SemiBold",
-          }}
+        <Pressable
+          onPress={() => otherUser?._id && router.push(`/profile/${otherUser._id}`)}
+          className="flex-1 flex-row items-center"
         >
-          {otherUser?.username ?? "Chat"}
-        </Text>
+          {otherUser?.avatarUrl ? (
+            <Image
+              source={{ uri: otherUser.avatarUrl }}
+              style={{ width: 32, height: 32, borderRadius: 16 }}
+            />
+          ) : (
+            <Ionicons name="person-circle" size={32} color={Palette.brown} />
+          )}
+          <View className="ml-2">
+            <Text
+              className="text-base font-semibold"
+              style={{
+                color: Palette.dark,
+                fontFamily: "Quicksand_600SemiBold",
+              }}
+            >
+              {otherUser?.username ?? "Chat"}
+            </Text>
+            {partnerRating !== null && (
+              <View className="flex-row items-center">
+                <Ionicons name="star" size={10} color="#fbbf24" />
+                <Text
+                  className="ml-1 text-xs"
+                  style={{
+                    color: Palette.brown,
+                    fontFamily: "Quicksand_500Medium",
+                  }}
+                >
+                  {partnerRating.toFixed(1)}
+                </Text>
+              </View>
+            )}
+          </View>
+        </Pressable>
       </View>
 
       <KeyboardAvoidingView

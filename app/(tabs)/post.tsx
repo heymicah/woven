@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Pressable,
 } from "react-native";
+import { ThemedText } from "../../components/ThemedText";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -295,9 +296,9 @@ export default function PostScreen() {
                     <Ionicons name="arrow-back" size={24} color={Colors.text} />
                   </Pressable>
                 )}
-                <Text style={[styles.heading, { marginBottom: 0 }]}>
+                <ThemedText variant="bold" style={[styles.heading, { marginBottom: 0 }]}>
                   {isEditMode ? "Edit Post" : "New Post"}
-                </Text>
+                </ThemedText>
               </View>
 
               {/* 1. Photos */}
@@ -312,7 +313,7 @@ export default function PostScreen() {
 
               {/* 2. Title */}
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Title<Text style={{ color: Colors.error }}> *</Text></Text>
+                <ThemedText variant="semibold" style={styles.fieldLabel}>Title<ThemedText style={{ color: Colors.error }}> *</ThemedText></ThemedText>
                 <TextInput
                   style={styles.textInput}
                   placeholder="Vintage denim jacket"
@@ -357,10 +358,10 @@ export default function PostScreen() {
 
               {/* 7. Description (optional) */}
               <View style={styles.fieldGroup}>
-                <Text style={[styles.fieldLabel, styles.optionalLabel]}>
+                <ThemedText variant="semibold" style={[styles.fieldLabel, styles.optionalLabel]}>
                   Description{" "}
-                  <Text style={styles.optionalHint}>(optional)</Text>
-                </Text>
+                  <ThemedText style={styles.optionalHint}>(optional)</ThemedText>
+                </ThemedText>
                 <TextInput
                   style={[styles.textInput, styles.textArea]}
                   placeholder="Share details about fit, brand, material, wear…"
@@ -417,29 +418,23 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 22,
-    fontWeight: "700",
     color: Colors.text,
     marginBottom: 20,
-    fontFamily: "Quicksand_700Bold",
   },
   fieldGroup: {
     marginBottom: 16,
   },
   fieldLabel: {
     fontSize: 13,
-    fontWeight: "600",
     color: Colors.text,
     marginBottom: 8,
-    fontFamily: "Quicksand_600SemiBold",
   },
   optionalLabel: {
     marginBottom: 8,
   },
   optionalHint: {
-    fontWeight: "400",
     color: Colors.textSecondary,
     fontSize: 12,
-    fontFamily: "Quicksand_400Regular",
   },
   textInput: {
     backgroundColor: "#FFF1DA",

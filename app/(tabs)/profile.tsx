@@ -9,6 +9,7 @@ import {
   Image,
   useWindowDimensions,
 } from "react-native";
+import { ThemedText } from "../../components/ThemedText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "../../hooks/useAuth";
 import { Colors } from "../../constants/Colors";
@@ -149,17 +150,17 @@ export default function ProfileScreen() {
 
           {/* Info */}
           <View style={{ flex: 1, paddingTop: 6 }}>
-            <Text
+            <ThemedText
+              variant="bold"
               style={{
                 fontSize: 22,
-                fontWeight: "700",
                 color: Colors.heading,
               }}
             >
               {user?.username || "Username"}
-            </Text>
+            </ThemedText>
             {user?.bio ? (
-              <Text
+              <ThemedText
                 style={{
                   fontSize: 13,
                   color: Colors.textSecondary,
@@ -168,25 +169,25 @@ export default function ProfileScreen() {
                 numberOfLines={2}
               >
                 {user.bio}
-              </Text>
+              </ThemedText>
             ) : null}
 
             {/* Tokens */}
             <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
               <View style={{ width: 16, height: 16, borderRadius: 8, borderWidth: 1.5, borderColor: Colors.primary, alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontSize: 9, fontWeight: "800", color: Colors.primary, marginTop: -0.5 }}>$</Text>
+                <ThemedText variant="bold" style={{ fontSize: 9, color: Colors.primary, marginTop: -0.5 }}>$</ThemedText>
               </View>
-              <Text
+              <ThemedText
+                variant="semibold"
                 style={{
                   fontSize: 15,
-                  fontWeight: "600",
                   color: Colors.text,
                   marginLeft: 5,
                 }}
               >
                 {user?.tokenBalance ?? 0}
-              </Text>
-              <Text
+              </ThemedText>
+              <ThemedText
                 style={{
                   fontSize: 13,
                   color: Colors.textSecondary,
@@ -194,7 +195,7 @@ export default function ProfileScreen() {
                 }}
               >
                 tokens
-              </Text>
+              </ThemedText>
             </View>
 
             {/* Rating — 5 stars, tappable to open reviews */}
@@ -223,16 +224,16 @@ export default function ProfileScreen() {
                   </View>
                 );
               })}
-              <Text
+              <ThemedText
+                variant="semibold"
                 style={{
                   fontSize: 14,
-                  fontWeight: "600",
                   color: Colors.text,
                   marginLeft: 5,
                 }}
               >
                 3.5
-              </Text>
+              </ThemedText>
               <Ionicons
                 name="chevron-forward"
                 size={14}
@@ -285,15 +286,15 @@ export default function ProfileScreen() {
                   marginBottom: -1,
                 }}
               >
-                <Text
+                <ThemedText
+                  variant={isActive ? "bold" : "medium"}
                   style={{
                     fontSize: 13,
-                    fontWeight: isActive ? "700" : "500",
                     color: isActive ? Colors.brown.dark : Colors.textSecondary,
                   }}
                 >
                   {tab.label}
-                </Text>
+                </ThemedText>
               </Pressable>
             );
           })}
@@ -326,15 +327,15 @@ export default function ProfileScreen() {
               >
                 <Ionicons name={emptyState?.icon as any} size={32} color={Colors.primary} />
               </View>
-              <Text
+              <ThemedText
+                variant="semibold"
                 style={{
                   fontSize: 16,
-                  fontWeight: "600",
                   color: Colors.textSecondary,
                 }}
               >
                 {emptyState?.message}
-              </Text>
+              </ThemedText>
             </View>
           ) : (
             (() => {
