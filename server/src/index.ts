@@ -11,6 +11,7 @@ import userRoutes from "./routes/user.routes";
 import transactionRoutes from "./routes/transaction.routes";
 import reviewRoutes from "./routes/review.routes";
 import conversationRoutes from "./routes/conversation.routes";
+import uploadRoutes from "./routes/upload.routes";
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/conversations", conversationRoutes);
+app.use("/api/upload", uploadRoutes);
 
 // Start server
 connectDB().then(() => {

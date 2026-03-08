@@ -18,6 +18,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { messagesService } from "../../services/messages.service";
+import { itemsService } from "../../services/items.service";
+import { Item } from "../../types";
 
 // Palette: #FFD1D9, #E28D9B, #FAE5C4, #96755F, #411E12
 const Palette = {
@@ -84,10 +86,15 @@ export default function ItemDetailScreen() {
 
   const { user } = useAuth();
 
-  const item = MOCK_ITEMS[id ?? "1"] ?? MOCK_ITEMS["1"];
-  const isOwnItem = user?._id === item.postedBy._id;
-  const images = item.imageUrls;
-  const tags = [item.gender, `Size ${item.size}`, item.condition];
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    itemsService
+      .getById(id)
+      .then((data) => setItem(data))
+      .catch(() => setError("Could not load item"))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -330,14 +337,14 @@ export default function ItemDetailScreen() {
       </ScrollView>
 
       {/* Docked Message Button */}
-      {!isOwnItem && (
+      {postedBy && user?._id !== postedBy._id && (
         <SafeAreaView edges={["bottom"]} style={{ backgroundColor: Palette.cream }}>
           <View className="px-4 pb-4">
             <Pressable
               onPress={async () => {
                 try {
                   const convo = await messagesService.getOrCreateConversation(
-                    item.postedBy._id,
+                    postedBy!._id,
                     item._id
                   );
                   router.push(`/chat/${convo._id}`);
