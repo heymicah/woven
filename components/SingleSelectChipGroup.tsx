@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   chipActive: {
-    backgroundColor: Colors.brown.dark,
+    backgroundColor: Colors.primary,
   },
   chipInactive: {
     backgroundColor: "#FFF1DA",
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     fontFamily: "Quicksand_500Medium",
   },
   chipTextActive: {
-    color: "#FFFFFF",
+    color: Colors.brown.dark,
     fontWeight: "600",
     fontFamily: "Quicksand_600SemiBold",
   },

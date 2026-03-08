@@ -7,6 +7,7 @@ import {
   ScrollView,
   FlatList,
   Alert,
+  Share,
   Dimensions,
   Modal,
   ActivityIndicator,
@@ -241,7 +242,13 @@ export default function ItemDetailScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => Alert.alert("Share", "Sharing coming soon!")}
+              onPress={async () => {
+                try {
+                  await Share.share({
+                    message: `Check out "${item.title}" on Woven!`,
+                  });
+                } catch {}
+              }}
               className="w-10 h-10 rounded-full items-center justify-center"
               style={{
                 backgroundColor: "#FFF1DA",
