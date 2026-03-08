@@ -19,7 +19,7 @@ export async function getMyConversations(
     const result = conversations.map((c) => {
       const obj = c.toJSON();
       let unreadCount = 0;
-      if (c.lastMessage && c.lastMessage.senderId.toString() !== req.userId) {
+      if (c.lastMessage && c.lastMessage.senderId && c.lastMessage.senderId.toString() !== req.userId) {
         const lastRead = c.readBy?.get(req.userId!);
         if (!lastRead || lastRead < c.lastMessage.createdAt) {
           unreadCount = 1;
@@ -239,7 +239,7 @@ export async function getUnreadCount(
 
     let count = 0;
     for (const c of conversations) {
-      if (c.lastMessage && c.lastMessage.senderId.toString() !== req.userId) {
+      if (c.lastMessage && c.lastMessage.senderId && c.lastMessage.senderId.toString() !== req.userId) {
         const lastRead = c.readBy?.get(req.userId!);
         if (!lastRead || lastRead < c.lastMessage.createdAt) {
           count++;
