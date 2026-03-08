@@ -17,9 +17,10 @@ interface PostButtonProps {
   disabled: boolean;
   loading: boolean;
   onPress: () => void;
+  label?: string;
 }
 
-export default function PostButton({ disabled, loading, onPress }: PostButtonProps) {
+export default function PostButton({ disabled, loading, onPress, label = "Post Item" }: PostButtonProps) {
   const [keyboardUp, setKeyboardUp] = React.useState(false);
 
   React.useEffect(() => {
@@ -44,7 +45,7 @@ export default function PostButton({ disabled, loading, onPress }: PostButtonPro
           (disabled || loading) && styles.buttonDisabled,
         ]}
         accessibilityRole="button"
-        accessibilityLabel="Post item"
+        accessibilityLabel={label}
         accessibilityState={{ disabled: disabled || loading }}
       >
         {loading ? (
@@ -56,7 +57,7 @@ export default function PostButton({ disabled, loading, onPress }: PostButtonPro
               (disabled || loading) && styles.buttonTextDisabled,
             ]}
           >
-            Post Item
+            {label}
           </Text>
         )}
       </Pressable>

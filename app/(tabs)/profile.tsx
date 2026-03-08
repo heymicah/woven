@@ -16,6 +16,7 @@ import { itemsService } from "../../services/items.service";
 import { Item, ItemStatus } from "../../types";
 import { useRouter, useFocusEffect } from "expo-router";
 import { MasonryImage } from "../../components/MasonryImage";
+import { fetchAspectRatiosBatch } from "../../utils/image";
 
 type ProfileTab = "current" | "past" | "received" | "liked";
 
@@ -48,6 +49,12 @@ export default function ProfileScreen() {
       setMyItems(mine);
       setClaimedItems(claimed);
       setLikedItems(liked);
+
+      // Batch fetch aspect ratios to prevent glitching
+      const allItems = [...mine, ...claimed, ...liked];
+      const uris = allItems.map(i => i.imageUrls?.[0]).filter((u): u is string => !!u);
+      const ratiosMap = await fetchAspectRatiosBatch(uris);
+      setAspectRatios(prev => ({ ...prev, ...ratiosMap }));
     } catch (error) {
       console.error("Failed to fetch profile data:", error);
     }
@@ -58,27 +65,6 @@ export default function ProfileScreen() {
       fetchData();
     }, [fetchData])
   );
-
-  useEffect(() => {
-    // Pre-fetch aspect ratios for greedy balancing
-    const allItems = [...myItems, ...claimedItems, ...likedItems];
-    allItems.forEach((item) => {
-      if (aspectRatios[item._id]) return;
-      const uri = item.imageUrls?.[0];
-      if (!uri) return;
-
-      Image.getSize(
-        uri,
-        (width, height) => {
-          setAspectRatios((prev) => ({ ...prev, [item._id]: width / height }));
-        },
-        () => {
-          // Fallback to square if error
-          setAspectRatios((prev) => ({ ...prev, [item._id]: 1 }));
-        }
-      );
-    });
-  }, [myItems, claimedItems, likedItems]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -383,6 +369,7 @@ export default function ProfileScreen() {
                   <MasonryImage
                     key={item._id}
                     uri={sourceUri}
+                    aspectRatio={aspectRatios[item._id]}
                     columnWidth={columnWidth}
                     onPress={() => router.push(`/item/${item._id}`)}
                   />

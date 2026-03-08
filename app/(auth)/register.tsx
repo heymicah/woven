@@ -11,6 +11,7 @@ import {
   Image,
 } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
+import { router } from "expo-router";
 
 export default function RegisterScreen() {
   const { register } = useAuth();
@@ -29,6 +30,7 @@ export default function RegisterScreen() {
     setLoading(true);
     try {
       await register({ username, email, password });
+      router.replace("/(tabs)");
     } catch (error: any) {
       Alert.alert("Registration Failed", error.response?.data?.message || "Something went wrong");
     } finally {

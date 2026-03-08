@@ -77,6 +77,13 @@ export default function TabsLayout() {
             <Ionicons name="add-circle-outline" size={size} color={color} />
           ),
         }}
+        listeners={{
+          tabPress: (e) => {
+            // Prevent default behavior and explicitly navigate to clear params
+            e.preventDefault();
+            router.push("/(tabs)/post");
+          },
+        }}
       />
       <Tabs.Screen
         name="inbox"

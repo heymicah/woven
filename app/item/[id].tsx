@@ -149,6 +149,35 @@ export default function ItemDetailScreen() {
     }
   };
 
+  const handleDelete = () => {
+    if (!item) return;
+
+    Alert.alert(
+      "Delete Item?",
+      "Are you sure you want to delete this listing? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await itemsService.delete(item._id);
+              router.replace("/(tabs)");
+              Alert.alert("Deleted", "Your item has been removed.");
+            } catch (err) {
+              console.error("Failed to delete item:", err);
+              Alert.alert("Error", "Could not delete item. Please try again.");
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: Palette.cream, justifyContent: "center", alignItems: "center" }}>
@@ -206,20 +235,37 @@ export default function ItemDetailScreen() {
 
           <View className="flex-row items-center" style={{ gap: 8 }}>
             {postedBy && user?._id === postedBy._id && (
-              <Pressable
-                onPress={() => router.push(`/(tabs)/post?id=${item._id}`)}
-                className="w-10 h-10 rounded-full items-center justify-center"
-                style={{
-                  backgroundColor: "#FFF1DA",
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.15,
-                  shadowRadius: 3,
-                  elevation: 3,
-                }}
-              >
-                <Ionicons name="create-outline" size={20} color={Palette.dark} />
-              </Pressable>
+              <>
+                <Pressable
+                  onPress={handleDelete}
+                  className="w-10 h-10 rounded-full items-center justify-center"
+                  style={{
+                    backgroundColor: "#FFF1DA",
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 3,
+                    elevation: 3,
+                  }}
+                >
+                  <Ionicons name="trash-outline" size={20} color={Palette.dark} />
+                </Pressable>
+
+                <Pressable
+                  onPress={() => router.push(`/item/edit?id=${item._id}`)}
+                  className="w-10 h-10 rounded-full items-center justify-center"
+                  style={{
+                    backgroundColor: "#FFF1DA",
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 3,
+                    elevation: 3,
+                  }}
+                >
+                  <Ionicons name="create-outline" size={20} color={Palette.dark} />
+                </Pressable>
+              </>
             )}
 
             <Pressable
@@ -247,7 +293,7 @@ export default function ItemDetailScreen() {
                   await Share.share({
                     message: `Check out "${item.title}" on Woven!`,
                   });
-                } catch {}
+                } catch { }
               }}
               className="w-10 h-10 rounded-full items-center justify-center"
               style={{

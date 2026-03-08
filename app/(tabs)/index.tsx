@@ -14,6 +14,7 @@ import { Colors } from "../../constants/Colors";
 import { Item } from "../../types";
 import { itemsService } from "../../services/items.service";
 import { MasonryImage } from "../../components/MasonryImage";
+import { fetchAspectRatiosBatch } from "../../utils/image";
 
 export default function ExploreScreen() {
   const router = useRouter();
@@ -28,6 +29,11 @@ export default function ExploreScreen() {
       setError(null);
       const data = await itemsService.getAll();
       setItems(data);
+
+      // Batch fetch aspect ratios to prevent glitching
+      const uris = data.map(item => item.imageUrls?.[0]).filter((u): u is string => !!u);
+      const ratiosMap = await fetchAspectRatiosBatch(uris);
+      setAspectRatios(prev => ({ ...prev, ...ratiosMap }));
     } catch (err: any) {
       console.error("[Explore] Failed to fetch items:", err.message);
       setError("Couldn't load items. Pull down to retry.");
@@ -40,26 +46,6 @@ export default function ExploreScreen() {
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
-
-  useEffect(() => {
-    // Pre-fetch aspect ratios for greedy balancing
-    items.forEach((item) => {
-      if (aspectRatios[item._id]) return;
-      const uri = item.imageUrls?.[0];
-      if (!uri) return;
-
-      Image.getSize(
-        uri,
-        (width, height) => {
-          setAspectRatios((prev) => ({ ...prev, [item._id]: width / height }));
-        },
-        () => {
-          // Fallback to square if error
-          setAspectRatios((prev) => ({ ...prev, [item._id]: 1 }));
-        }
-      );
-    });
-  }, [items]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -99,6 +85,7 @@ export default function ExploreScreen() {
       <MasonryImage
         key={itemData._id}
         uri={photoUri}
+        aspectRatio={aspectRatios[itemData._id]}
         columnWidth={columnWidth}
         onPress={() => router.push(`/item/${itemData._id}`)}
       />

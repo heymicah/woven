@@ -6,19 +6,34 @@ interface MasonryImageProps {
     uri: string;
     onPress: () => void;
     columnWidth: number;
+    aspectRatio?: number;
 }
 
-export function MasonryImage({ uri, onPress, columnWidth }: MasonryImageProps) {
-    const [aspectRatio, setAspectRatio] = useState(1); // Default to square
-    const [loading, setLoading] = useState(true);
+const ratioCache: { [key: string]: number } = {};
+
+export function MasonryImage({ uri, onPress, columnWidth, aspectRatio: initialRatio }: MasonryImageProps) {
+    const [aspectRatio, setAspectRatio] = useState(initialRatio || ratioCache[uri] || 1); // Prefer initial, then cache, then square
+    const [loading, setLoading] = useState(!initialRatio && !ratioCache[uri]);
 
     useEffect(() => {
-        if (!uri) return;
+        if (!uri || ratioCache[uri]) return;
 
         Image.getSize(
             uri,
             (width, height) => {
-                setAspectRatio(width / height);
+                const rawRatio = width / height;
+                let binnedRatio = 1;
+
+                if (rawRatio < 0.85) {
+                    binnedRatio = 0.75; // 3:4 Portrait
+                } else if (rawRatio > 1.15) {
+                    binnedRatio = 1.33; // 4:3 Landscape
+                } else {
+                    binnedRatio = 1; // Square
+                }
+
+                ratioCache[uri] = binnedRatio;
+                setAspectRatio(binnedRatio);
                 setLoading(false);
             },
             (error) => {

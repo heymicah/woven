@@ -17,6 +17,7 @@ import { userService } from "../../services/user.service";
 import { Item, ItemStatus, User } from "../../types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MasonryImage } from "../../components/MasonryImage";
+import { fetchAspectRatiosBatch } from "../../utils/image";
 
 type ProfileTab = "current" | "past";
 
@@ -50,6 +51,11 @@ export default function PublicProfileScreen() {
       ]);
       setUser(userData);
       setItems(userItems);
+
+      // Batch fetch aspect ratios to prevent glitching
+      const uris = userItems.map(i => i.imageUrls?.[0]).filter((u): u is string => !!u);
+      const ratiosMap = await fetchAspectRatiosBatch(uris);
+      setAspectRatios(prev => ({ ...prev, ...ratiosMap }));
     } catch (error) {
       console.error("Failed to fetch public profile data:", error);
     }
@@ -59,26 +65,6 @@ export default function PublicProfileScreen() {
     setLoading(true);
     fetchData().finally(() => setLoading(false));
   }, [id, activeTab]);
-
-  useEffect(() => {
-    // Pre-fetch aspect ratios for greedy balancing
-    items.forEach((item) => {
-      if (aspectRatios[item._id]) return;
-      const uri = item.imageUrls?.[0];
-      if (!uri) return;
-
-      Image.getSize(
-        uri,
-        (width, height) => {
-          setAspectRatios((prev) => ({ ...prev, [item._id]: width / height }));
-        },
-        () => {
-          // Fallback to square if error
-          setAspectRatios((prev) => ({ ...prev, [item._id]: 1 }));
-        }
-      );
-    });
-  }, [items]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -107,6 +93,7 @@ export default function PublicProfileScreen() {
       <MasonryImage
         key={item._id}
         uri={item.imageUrls?.[0] || "https://via.placeholder.com/300x400?text=No+Image"}
+        aspectRatio={aspectRatios[item._id]}
         columnWidth={columnWidth}
         onPress={() => router.push(`/item/${item._id}`)}
       />
