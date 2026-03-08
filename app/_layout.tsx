@@ -25,7 +25,7 @@ function RootNavigator() {
     return <Redirect href="/(auth)/login" />;
   }
 
-  return <Redirect href="/(tabs)" />;
+  return null;
 }
 
 export default function RootLayout() {

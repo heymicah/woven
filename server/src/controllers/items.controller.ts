@@ -224,3 +224,63 @@ export async function getClaimedItems(
     res.status(500).json({ message: "Server error" });
   }
 }
+
+export async function toggleLike(
+  req: AuthRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const item = await Item.findById(req.params.id);
+    if (!item) {
+      res.status(404).json({ message: "Item not found" });
+      return;
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    const likedItems = user.likedItems || [];
+    const index = likedItems.indexOf(item._id as any);
+
+    if (index > -1) {
+      // Unlike
+      likedItems.splice(index, 1);
+    } else {
+      // Like
+      likedItems.push(item._id as any);
+    }
+
+    user.likedItems = likedItems;
+    await user.save();
+
+    res.json({ liked: index === -1 });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function getLikedItems(
+  req: AuthRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const user = await User.findById(req.userId).populate("likedItems");
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    // Populate the postedBy field of each liked item as well
+    const items = await Item.find({ _id: { $in: user.likedItems } })
+      .populate("postedBy", "username avatarUrl")
+      .sort({ createdAt: -1 });
+
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
