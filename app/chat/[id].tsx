@@ -85,6 +85,7 @@ export default function ChatScreen() {
     const handler = (data: { message: Message; conversationId: string }) => {
       if (data.conversationId === id) {
         setMessages((prev) => [...prev, data.message]);
+        messagesService.markAsRead(id).catch(() => {});
       }
     };
 
