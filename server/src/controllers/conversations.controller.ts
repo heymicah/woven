@@ -13,9 +13,22 @@ export async function getMyConversations(
       participants: req.userId,
     })
       .populate("participants", "username avatarUrl")
-      .sort({ updatedAt: -1 });
+      .sort({ "lastMessage.createdAt": -1, updatedAt: -1 });
 
-    res.json(conversations);
+    // Compute unreadCount for each conversation
+    const result = conversations.map((c) => {
+      const obj = c.toJSON();
+      let unreadCount = 0;
+      if (c.lastMessage && c.lastMessage.senderId.toString() !== req.userId) {
+        const lastRead = c.readBy?.get(req.userId!);
+        if (!lastRead || lastRead < c.lastMessage.createdAt) {
+          unreadCount = 1;
+        }
+      }
+      return { ...obj, unreadCount };
+    });
+
+    res.json(result);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
@@ -159,12 +172,13 @@ export async function sendMessage(
       text: text.trim(),
     });
 
-    // Update lastMessage on conversation
+    // Update lastMessage on conversation and mark as read by sender
     conversation.lastMessage = {
       text: text.trim(),
       senderId: message.senderId,
       createdAt: new Date(),
     };
+    conversation.readBy.set(req.userId!, new Date());
     await conversation.save();
 
     // Emit to all participants via Socket.io
@@ -179,6 +193,60 @@ export async function sendMessage(
     });
 
     res.status(201).json(message);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function markAsRead(
+  req: AuthRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const conversation = await Conversation.findById(req.params.id);
+
+    if (!conversation) {
+      res.status(404).json({ message: "Conversation not found" });
+      return;
+    }
+
+    const isParticipant = conversation.participants.some(
+      (p) => p.toString() === req.userId
+    );
+    if (!isParticipant) {
+      res.status(403).json({ message: "Not authorized" });
+      return;
+    }
+
+    conversation.readBy.set(req.userId!, new Date());
+    await conversation.save();
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+export async function getUnreadCount(
+  req: AuthRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const conversations = await Conversation.find({
+      participants: req.userId,
+    });
+
+    let count = 0;
+    for (const c of conversations) {
+      if (c.lastMessage && c.lastMessage.senderId.toString() !== req.userId) {
+        const lastRead = c.readBy?.get(req.userId!);
+        if (!lastRead || lastRead < c.lastMessage.createdAt) {
+          count++;
+        }
+      }
+    }
+
+    res.json({ count });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }

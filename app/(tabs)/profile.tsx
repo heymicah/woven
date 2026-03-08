@@ -59,7 +59,6 @@ export default function ProfileScreen() {
   const [myItems, setMyItems] = useState<Item[]>([]);
   const [claimedItems, setClaimedItems] = useState<Item[]>([]);
   const [likedItems, setLikedItems] = useState<Item[]>([]);
-  const [aspectRatios, setAspectRatios] = useState<{ [key: string]: number }>({});
   const [avgRating, setAvgRating] = useState(0);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -77,11 +76,7 @@ export default function ProfileScreen() {
       setLikedItems(liked);
       setAvgRating(reviewsData.avgRating);
 
-      // Batch fetch aspect ratios to prevent glitching
-      const allItems = [...mine, ...received, ...liked];
-      const uris = allItems.map(i => i.imageUrls?.[0]).filter((u): u is string => !!u);
-      const ratiosMap = await fetchAspectRatiosBatch(uris);
-      setAspectRatios(prev => ({ ...prev, ...ratiosMap }));
+
     } catch (error) {
       console.error("Failed to fetch profile data:", error);
     }

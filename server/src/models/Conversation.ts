@@ -8,6 +8,7 @@ export interface IConversation extends Document {
     senderId: mongoose.Types.ObjectId;
     createdAt: Date;
   };
+  readBy: Map<string, Date>;
 }
 
 const conversationSchema = new Schema<IConversation>(
@@ -27,6 +28,11 @@ const conversationSchema = new Schema<IConversation>(
       text: String,
       senderId: { type: Schema.Types.ObjectId, ref: "User" },
       createdAt: Date,
+    },
+    readBy: {
+      type: Map,
+      of: Date,
+      default: {},
     },
   },
   { timestamps: true }
