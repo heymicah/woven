@@ -37,63 +37,63 @@ export default function RegisterScreen() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-    <View style={styles.screen}>
-      <View style={styles.form}>
-        <Text className="text-4xl font-bold text-center text-indigo-600 mb-2">
-          Woven
-        </Text>
-        <Text className="text-base text-center text-gray-500 mb-10">
-          Join the community
-        </Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Username"
-          placeholderTextColor="#9CA3AF"
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
-          returnKeyType="next"
-          onSubmitEditing={() => emailRef.current?.focus()}
-          blurOnSubmit={false}
-        />
-        <TextInput
-          ref={emailRef}
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#9CA3AF"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          returnKeyType="next"
-          onSubmitEditing={() => passwordRef.current?.focus()}
-          blurOnSubmit={false}
-        />
-        <TextInput
-          ref={passwordRef}
-          style={[styles.input, { marginBottom: 24 }]}
-          placeholder="Password"
-          placeholderTextColor="#9CA3AF"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          returnKeyType="go"
-          onSubmitEditing={handleRegister}
-        />
-
-        <Pressable
-          onPress={handleRegister}
-          disabled={loading}
-          className="bg-indigo-600 rounded-xl py-4 items-center"
-          style={({ pressed }) => (pressed ? { opacity: 0.8 } : undefined)}
-        >
-          <Text className="text-white font-semibold text-base">
-            {loading ? "Creating account..." : "Create Account"}
+      <View style={styles.screen}>
+        <View style={styles.form}>
+          <Text className="text-4xl font-bold text-center text-[#411E12] mb-2">
+            Woven
           </Text>
-        </Pressable>
+          <Text className="text-base text-center text-gray-500 mb-10">
+            Join the community
+          </Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#96755F"
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+            returnKeyType="next"
+            onSubmitEditing={() => emailRef.current?.focus()}
+            blurOnSubmit={false}
+          />
+          <TextInput
+            ref={emailRef}
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#96755F"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            returnKeyType="next"
+            onSubmitEditing={() => passwordRef.current?.focus()}
+            blurOnSubmit={false}
+          />
+          <TextInput
+            ref={passwordRef}
+            style={[styles.input, { marginBottom: 24 }]}
+            placeholder="Password"
+            placeholderTextColor="#96755F"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            returnKeyType="go"
+            onSubmitEditing={handleRegister}
+          />
+
+          <Pressable
+            onPress={handleRegister}
+            disabled={loading}
+            className="bg-[#A8C9A8] rounded-full py-4 items-center"
+            style={({ pressed }) => pressed && { opacity: 0.8 }}
+          >
+            <Text className="text-[#411E12] font-semibold text-base">
+              {loading ? "Creating account..." : "Create Account"}
+            </Text>
+          </Pressable>
+        </View>
       </View>
-    </View>
     </TouchableWithoutFeedback>
   );
 }
@@ -101,7 +101,7 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FAE5C4",
     justifyContent: "center",
     paddingBottom: "40%",
   },
@@ -109,14 +109,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   input: {
-    backgroundColor: "#F9FAFB",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    backgroundColor: "#FFF1DA",
+    borderWidth: 0,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     marginBottom: 16,
     fontSize: 16,
-    color: "#111827",
+    color: "#411E12",
   },
 });
