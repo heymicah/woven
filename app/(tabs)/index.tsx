@@ -29,7 +29,7 @@ export default function ExploreScreen() {
     try {
       setError(null);
       const data = await itemsService.getAll();
-      setItems(data);
+      setItems(Array.isArray(data) ? data : []);
       const uris = data.map(item => item.imageUrls?.[0]).filter((u): u is string => !!u);
       const ratiosMap = await fetchAspectRatiosBatch(uris);
       setAspectRatios(prev => ({ ...prev, ...ratiosMap }));
