@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { View, FlatList, Pressable, ActivityIndicator } from "react-native";
+import { View, FlatList, Pressable, ActivityIndicator, Image } from "react-native";
 import { ThemedText } from "../../components/ThemedText";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -133,11 +133,18 @@ export default function InboxScreen() {
               className="flex-row items-center px-4 py-3 border-b"
               style={{ borderBottomColor: "#E5D5B8" }}
             >
-              <Ionicons
-                name="person-circle"
-                size={44}
-                color={Palette.brown}
-              />
+              {otherUser?.avatarUrl ? (
+                <Image
+                  source={{ uri: otherUser.avatarUrl }}
+                  style={{ width: 44, height: 44, borderRadius: 22 }}
+                />
+              ) : (
+                <Ionicons
+                  name="person-circle"
+                  size={44}
+                  color={Palette.brown}
+                />
+              )}
               <View className="flex-1 ml-3">
                 <View className="flex-row items-center justify-between">
                   <ThemedText
