@@ -32,6 +32,11 @@ export const itemsService = {
     return data;
   },
 
+  update: async (id: string, item: Partial<Item>): Promise<Item> => {
+    const { data } = await api.put<Item>(`/items/${id}`, item);
+    return data;
+  },
+
   delete: async (id: string): Promise<void> => {
     await api.delete(`/items/${id}`);
   },

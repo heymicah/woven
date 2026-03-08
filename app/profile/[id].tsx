@@ -90,7 +90,6 @@ export default function PublicProfileScreen() {
         key={item._id}
         onPress={() => router.push(`/item/${item._id}`)}
         style={{
-          width: columnWidth,
           height,
           marginBottom: gap,
           borderRadius: 16,
@@ -275,7 +274,7 @@ export default function PublicProfileScreen() {
         </View>
 
         {/* Grid Content */}
-        <View style={{ padding: padding, flexDirection: "row", gap: gap }}>
+        <View style={{ padding: padding, flexDirection: "row", gap: gap, width: "100%" }}>
           {items.length === 0 ? (
             <View style={{ flex: 1, alignItems: "center", paddingTop: 60 }}>
               <View

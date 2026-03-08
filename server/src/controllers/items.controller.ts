@@ -139,6 +139,40 @@ export async function claimItem(
   }
 }
 
+export async function updateItem(
+  req: AuthRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const item = await Item.findById(req.params.id);
+    if (!item) {
+      res.status(404).json({ message: "Item not found" });
+      return;
+    }
+
+    if (item.postedBy.toString() !== req.userId) {
+      res.status(403).json({ message: "Not authorized to edit this item" });
+      return;
+    }
+
+    if (item.status !== ItemStatus.AVAILABLE) {
+      res.status(400).json({ message: "Cannot edit an item that is not available" });
+      return;
+    }
+
+    const updatedItem = await Item.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true, runValidators: true }
+    ).populate("postedBy", "username avatarUrl");
+
+    res.json(updatedItem);
+  } catch (error: any) {
+    console.error("[updateItem] ERROR:", error.message);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+}
+
 export async function deleteItem(
   req: AuthRequest,
   res: Response
