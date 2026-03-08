@@ -52,7 +52,7 @@ export default function ProfileScreen() {
       setLikedItems(liked);
 
       // Batch fetch aspect ratios to prevent glitching
-      const allItems = [...mine, ...claimed, ...liked];
+      const allItems = [...mine, ...received, ...liked];
       const uris = allItems.map(i => i.imageUrls?.[0]).filter((u): u is string => !!u);
       const ratiosMap = await fetchAspectRatiosBatch(uris);
       setAspectRatios(prev => ({ ...prev, ...ratiosMap }));
@@ -86,9 +86,6 @@ export default function ProfileScreen() {
         return pastItems;
       case "received":
         return receivedItems;
-      case "received":
-        return receivedItems;
-        return claimedItems;
       case "liked":
         return likedItems;
       default:
