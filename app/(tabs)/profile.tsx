@@ -9,7 +9,6 @@ import {
   Image,
   useWindowDimensions,
 } from "react-native";
-import { ThemedText } from "../../components/ThemedText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "../../hooks/useAuth";
 import { Colors } from "../../constants/Colors";
@@ -17,10 +16,32 @@ import { itemsService } from "../../services/items.service";
 import { reviewsService } from "../../services/reviews.service";
 import { Item, ItemStatus } from "../../types";
 import { useRouter, useFocusEffect } from "expo-router";
-import { MasonryImage } from "../../components/MasonryImage";
-import { fetchAspectRatiosBatch } from "../../utils/image";
 
 type ProfileTab = "current" | "past" | "received" | "liked";
+
+
+function ProfileCard({ uri, cardWidth, onPress }: { uri: string; cardWidth: number; onPress: () => void }) {
+  const [ratio, setRatio] = useState<number>(3 / 4);
+  useEffect(() => {
+    Image.getSize(uri, (w, h) => setRatio(w / h), () => { });
+  }, [uri]);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{
+        width: "100%",
+        aspectRatio: ratio,
+        borderRadius: 14,
+        overflow: "hidden",
+        backgroundColor: "#C4DBC4",
+        marginBottom: 10,
+      }}
+    >
+      <Image source={{ uri }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
+    </Pressable>
+  );
+}
 
 const TABS: { key: ProfileTab; label: string }[] = [
   { key: "current", label: "Current" },
@@ -30,12 +51,12 @@ const TABS: { key: ProfileTab; label: string }[] = [
 ];
 
 export default function ProfileScreen() {
-  const { user, refreshUser } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const [activeTab, setActiveTab] = useState<ProfileTab>("current");
   const [myItems, setMyItems] = useState<Item[]>([]);
-  const [receivedItems, setReceivedItems] = useState<Item[]>([]);
+  const [claimedItems, setClaimedItems] = useState<Item[]>([]);
   const [likedItems, setLikedItems] = useState<Item[]>([]);
   const [aspectRatios, setAspectRatios] = useState<{ [key: string]: number }>({});
   const [avgRating, setAvgRating] = useState(0);
@@ -51,7 +72,7 @@ export default function ProfileScreen() {
         user?._id ? reviewsService.getForUser(user._id) : Promise.resolve({ reviews: [], avgRating: 0, totalReviews: 0 }),
       ]);
       setMyItems(mine);
-      setReceivedItems(received);
+      setClaimedItems(claimed);
       setLikedItems(liked);
       setAvgRating(reviewsData.avgRating);
 
@@ -73,8 +94,6 @@ export default function ProfileScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    // Refresh user in background without awaiting to avoid re-render during gesture
-    refreshUser();
     await fetchData();
     setRefreshing(false);
   }, [fetchData]);
@@ -89,7 +108,7 @@ export default function ProfileScreen() {
       case "past":
         return pastItems;
       case "received":
-        return receivedItems;
+        return claimedItems;
       case "liked":
         return likedItems;
       default:
@@ -156,17 +175,17 @@ export default function ProfileScreen() {
 
           {/* Info */}
           <View style={{ flex: 1, paddingTop: 6 }}>
-            <ThemedText
-              variant="bold"
+            <Text
               style={{
                 fontSize: 22,
+                fontWeight: "700",
                 color: Colors.heading,
               }}
             >
               {user?.username || "Username"}
-            </ThemedText>
+            </Text>
             {user?.bio ? (
-              <ThemedText
+              <Text
                 style={{
                   fontSize: 13,
                   color: Colors.textSecondary,
@@ -175,25 +194,25 @@ export default function ProfileScreen() {
                 numberOfLines={2}
               >
                 {user.bio}
-              </ThemedText>
+              </Text>
             ) : null}
 
             {/* Tokens */}
             <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
               <View style={{ width: 16, height: 16, borderRadius: 8, borderWidth: 1.5, borderColor: Colors.primary, alignItems: "center", justifyContent: "center" }}>
-                <ThemedText variant="bold" style={{ fontSize: 9, color: Colors.primary, marginTop: -0.5 }}>$</ThemedText>
+                <Text style={{ fontSize: 9, fontWeight: "800", color: Colors.primary, marginTop: -0.5 }}>$</Text>
               </View>
-              <ThemedText
-                variant="semibold"
+              <Text
                 style={{
                   fontSize: 15,
+                  fontWeight: "600",
                   color: Colors.text,
                   marginLeft: 5,
                 }}
               >
                 {user?.tokenBalance ?? 0}
-              </ThemedText>
-              <ThemedText
+              </Text>
+              <Text
                 style={{
                   fontSize: 13,
                   color: Colors.textSecondary,
@@ -201,7 +220,7 @@ export default function ProfileScreen() {
                 }}
               >
                 tokens
-              </ThemedText>
+              </Text>
             </View>
 
             {/* Rating — 5 stars, tappable to open reviews */}
@@ -229,10 +248,10 @@ export default function ProfileScreen() {
                   </View>
                 );
               })}
-              <ThemedText
-                variant="semibold"
+              <Text
                 style={{
                   fontSize: 14,
+                  fontWeight: "600",
                   color: Colors.text,
                   marginLeft: 5,
                 }}
@@ -248,36 +267,31 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
 
-          {/* Top-right icons */}
-          <View style={{ flexDirection: "column", alignItems: "center", gap: 12, marginTop: -2 }}>
-            <Pressable
-              onPress={() => router.push("/transfer/qr-scan")}
-              style={{ padding: 4 }}
-            >
-              <Ionicons name="scan-outline" size={24} color={Colors.textSecondary} />
-            </Pressable>
-            <Pressable
-              onPress={() => router.push("/settings")}
-              style={{ padding: 4 }}
-            >
-              <Ionicons name="settings-outline" size={24} color={Colors.textSecondary} />
-            </Pressable>
-          </View>
+          {/* Settings Gear — top-right, no background */}
+          <Pressable
+            onPress={() => router.push("/settings")}
+            style={{
+              padding: 4,
+              marginTop: -2,
+            }}
+          >
+            <Ionicons name="settings-outline" size={24} color={Colors.textSecondary} />
+          </Pressable>
         </View>
 
-        {/* ── Subtab Bar (filing cabinet style) ── */}
+        {/* ── Subtab Bar ── */}
         <View
           style={{
             flexDirection: "row",
             backgroundColor: Colors.background,
-            paddingHorizontal: 12,
+            marginHorizontal: 16,
             paddingTop: 8,
-            borderBottomWidth: 1,
-            borderBottomColor: Colors.brown.dark,
           }}
         >
-          {TABS.map((tab) => {
+          {TABS.map((tab, index) => {
             const isActive = activeTab === (tab.key as any);
+            const isFirst = index === 0;
+            const isLast = index === TABS.length - 1;
             return (
               <Pressable
                 key={tab.key}
@@ -286,32 +300,39 @@ export default function ProfileScreen() {
                   flex: 1,
                   alignItems: "center",
                   paddingVertical: 10,
-                  marginHorizontal: 3,
-                  borderTopLeftRadius: 14,
-                  borderTopRightRadius: 14,
-                  backgroundColor: isActive ? Colors.primary : "transparent",
-                  borderWidth: 1,
+                  borderTopWidth: isActive ? 1 : 0,
+                  borderLeftWidth: isActive ? 1 : 0,
+                  borderRightWidth: isActive ? 1 : 0,
                   borderBottomWidth: isActive ? 0 : 1,
                   borderColor: Colors.brown.dark,
-                  marginBottom: -1,
+                  borderTopLeftRadius: isActive ? 14 : 0,
+                  borderTopRightRadius: isActive ? 14 : 0,
                 }}
               >
-                <ThemedText
-                  variant={isActive ? "bold" : "medium"}
+                <Text
                   style={{
                     fontSize: 13,
+                    fontWeight: isActive ? "700" : "500",
                     color: isActive ? Colors.brown.dark : Colors.textSecondary,
                   }}
                 >
                   {tab.label}
-                </ThemedText>
+                </Text>
               </Pressable>
             );
           })}
         </View>
 
         {/* ── Tab Content ── */}
-        <View style={{ padding: 16, minHeight: 300 }}>
+        <View style={{
+          marginHorizontal: 16,
+          borderLeftWidth: 1,
+          borderRightWidth: 1,
+          borderColor: Colors.brown.dark,
+          paddingHorizontal: 8,
+          paddingTop: 12,
+          paddingBottom: 12,
+        }}>
           {loading ? (
             <View style={{ alignItems: "center", paddingTop: 60 }}>
               <ActivityIndicator size="large" color={Colors.primary} />
@@ -337,51 +358,35 @@ export default function ProfileScreen() {
               >
                 <Ionicons name={emptyState?.icon as any} size={32} color={Colors.primary} />
               </View>
-              <ThemedText
-                variant="semibold"
+              <Text
                 style={{
                   fontSize: 16,
+                  fontWeight: "600",
                   color: Colors.textSecondary,
                 }}
               >
                 {emptyState?.message}
-              </ThemedText>
+              </Text>
             </View>
           ) : (
             (() => {
-              // Split items into 2 columns using a "greedy" balancing algorithm
               const leftColumn: Item[] = [];
               const rightColumn: Item[] = [];
-              let leftHeight = 0;
-              let rightHeight = 0;
-
-              tabData.forEach((item) => {
-                const ratio = aspectRatios[item._id] || 1;
-                const heightWeight = 1 / ratio;
-
-                if (leftHeight <= rightHeight) {
-                  leftColumn.push(item);
-                  leftHeight += heightWeight;
-                } else {
-                  rightColumn.push(item);
-                  rightHeight += heightWeight;
-                }
+              tabData.forEach((item, i) => {
+                (i % 2 === 0 ? leftColumn : rightColumn).push(item);
               });
+              const gap = 10;
+              // 16 margin + 1 border + 8 padding per side = 50 total
+              const cardWidth = (width - 50 - gap) / 2;
 
-              const gap = 12;
-              const columnWidth = (width - 32 - gap) / 2;
-
-              const renderMasonryItem = (item: Item) => {
-                const sourceUri = item.imageUrls && item.imageUrls.length > 0
-                  ? item.imageUrls[0]
-                  : "https://via.placeholder.com/300x400?text=No+Image";
-
+              const renderCard = (item: Item) => {
+                const uri = item.imageUrls?.[0]
+                  || "https://via.placeholder.com/300x400?text=No+Image";
                 return (
-                  <MasonryImage
+                  <ProfileCard
                     key={item._id}
-                    uri={sourceUri}
-                    aspectRatio={aspectRatios[item._id]}
-                    columnWidth={columnWidth}
+                    uri={uri}
+                    cardWidth={cardWidth}
                     onPress={() => router.push(`/item/${item._id}`)}
                   />
                 );
@@ -389,14 +394,8 @@ export default function ProfileScreen() {
 
               return (
                 <View style={{ flexDirection: "row", gap }}>
-                  {/* Left Column */}
-                  <View style={{ flex: 1 }}>
-                    {leftColumn.map((item) => renderMasonryItem(item))}
-                  </View>
-                  {/* Right Column */}
-                  <View style={{ flex: 1 }}>
-                    {rightColumn.map((item) => renderMasonryItem(item))}
-                  </View>
+                  <View style={{ width: cardWidth }}>{leftColumn.map(renderCard)}</View>
+                  <View style={{ width: cardWidth }}>{rightColumn.map(renderCard)}</View>
                 </View>
               );
             })()

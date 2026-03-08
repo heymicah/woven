@@ -484,44 +484,40 @@ export default function ItemDetailScreen() {
 
       {/* Docked Bottom Button */}
       {postedBy && user?._id === postedBy._id && item.status === "available" && (
-        <SafeAreaView edges={["bottom"]} style={{ backgroundColor: Palette.cream }}>
-          <View className="px-4 pb-4">
-            <Pressable
-              onPress={() => router.push(`/transfer/qr-generate?itemId=${item._id}`)}
-              className="rounded-full py-4 items-center"
-              style={{ backgroundColor: Palette.green }}
-            >
-              <Text className="font-semibold text-base" style={{ color: Palette.dark, fontFamily: "Quicksand_600SemiBold" }}>
-                Start Transfer
-              </Text>
-            </Pressable>
-          </View>
-        </SafeAreaView>
+        <View style={{ position: "absolute", bottom: 40, left: 0, right: 0, paddingHorizontal: 16 }}>
+          <Pressable
+            onPress={() => router.push(`/transfer/qr-generate?itemId=${item._id}`)}
+            className="rounded-full py-4 items-center"
+            style={{ backgroundColor: Palette.green }}
+          >
+            <Text className="font-semibold text-base" style={{ color: Palette.dark, fontFamily: "Quicksand_600SemiBold" }}>
+              Start Transfer
+            </Text>
+          </Pressable>
+        </View>
       )}
       {postedBy && user?._id !== postedBy._id && item.status === "available" && (
-        <SafeAreaView edges={["bottom"]} style={{ backgroundColor: Palette.cream }}>
-          <View className="px-4 pb-4">
-            <Pressable
-              onPress={async () => {
-                try {
-                  const convo = await messagesService.getOrCreateConversation(
-                    postedBy!._id,
-                    item._id
-                  );
-                  router.push(`/chat/${convo._id}`);
-                } catch (error) {
-                  Alert.alert("Error", "Could not start conversation");
-                }
-              }}
-              className="rounded-full py-4 items-center"
-              style={{ backgroundColor: Palette.rose }}
-            >
-              <ThemedText variant="semibold" style={{ fontSize: 16, color: Palette.dark }}>
-                Message
-              </ThemedText>
-            </Pressable>
-          </View>
-        </SafeAreaView>
+        <View style={{ position: "absolute", bottom: 40, left: 0, right: 0, paddingHorizontal: 16 }}>
+          <Pressable
+            onPress={async () => {
+              try {
+                const convo = await messagesService.getOrCreateConversation(
+                  postedBy!._id,
+                  item._id
+                );
+                router.push(`/chat/${convo._id}`);
+              } catch (error) {
+                Alert.alert("Error", "Could not start conversation");
+              }
+            }}
+            className="rounded-full py-4 items-center"
+            style={{ backgroundColor: "#a8c9a8" }}
+          >
+            <ThemedText variant="semibold" style={{ fontSize: 16, color: Palette.dark }}>
+              Message
+            </ThemedText>
+          </Pressable>
+        </View>
       )}
       {item.status === "completed" && isParticipant && !hasReviewed && (
         <SafeAreaView edges={["bottom"]} style={{ backgroundColor: Palette.cream }}>

@@ -1,8 +1,10 @@
+import dotenv from "dotenv";
+dotenv.config({ override: true });
+
 import express from "express";
 import { createServer } from "http";
 import cors from "cors";
 import morgan from "morgan";
-import dotenv from "dotenv";
 import { connectDB } from "./config/db";
 import { setupSocket } from "./socket";
 import authRoutes from "./routes/auth.routes";
@@ -12,8 +14,6 @@ import transactionRoutes from "./routes/transaction.routes";
 import reviewRoutes from "./routes/review.routes";
 import conversationRoutes from "./routes/conversation.routes";
 import uploadRoutes from "./routes/upload.routes";
-
-dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);

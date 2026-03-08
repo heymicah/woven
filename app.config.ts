@@ -2,7 +2,7 @@ import { ExpoConfig, ConfigContext } from "expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: "Woven",
+  name: "woven",
   slug: "woven",
   version: "1.0.0",
   orientation: "portrait",
@@ -12,7 +12,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   splash: {
     image: "./assets/splash-icon.png",
     resizeMode: "contain",
-    backgroundColor: "#ffffff",
+    backgroundColor: "#FFF1DA",
   },
   ios: {
     supportsTablet: true,
@@ -21,7 +21,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     adaptiveIcon: {
       foregroundImage: "./assets/android-icon-foreground.png",
-      backgroundColor: "#E6F4FE",
+      backgroundColor: "#FFF1DA",
     },
     package: "com.woven.app",
   },
